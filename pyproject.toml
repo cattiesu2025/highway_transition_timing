@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "highway-transition-timing"
+version = "0.1.0"
+description = "Matched-exposure highway mode-transition timing analysis."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+plots = ["matplotlib>=3.7"]
+pilot = [
+  "gymnasium>=0.29",
+  "highway-env>=1.9",
+  "stable-baselines3>=2.3",
+]
+dev = ["pytest>=8"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

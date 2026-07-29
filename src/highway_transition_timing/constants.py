@@ -1,0 +1,36 @@
+"""Shared vocabulary for the transition-timing analysis."""
+
+LANE_KEEPING_CRUISE = "lane_keeping_cruise"
+HIGH_SPEED_CRUISE = "high_speed_cruise"
+TRAFFIC_SPACING_ADJUSTMENT = "traffic_spacing_adjustment"
+AMBIGUOUS = "ambiguous"
+
+PRIMARY_MODES = (
+    LANE_KEEPING_CRUISE,
+    HIGH_SPEED_CRUISE,
+    TRAFFIC_SPACING_ADJUSTMENT,
+)
+
+AGENTS = ("FD", "BAL", "SP")
+
+PRIMARY_TARGET = "first_stable_transition_after_exposure"
+FIRST_STABLE_MODE_ONSET_TARGET = "first_stable_mode_onset_after_exposure"
+LANE_CHANGE_ONSET_TARGET = "lane_change_onset"
+LANE_CHANGE_TARGET_LABEL = "lane_change_action"
+SLOWDOWN_ONSET_TARGET = "slowdown_onset"
+SLOWDOWN_TARGET_LABEL = "slowdown_action"
+
+VALID_ONSET = "valid_onset"
+NO_ONSET_CENSORED = "no_onset_censored"
+TERMINAL_FAILURE = "terminal_failure"
+
+VALID_PAIR = "valid_pair"
+CENSORED_PAIR = "censored_pair"
+TERMINAL_FAILURE_PAIR = "terminal_failure_pair"
+
+LANE_CHANGE_ACTIONS = {"LANE_LEFT", "LANE_RIGHT", "LEFT", "RIGHT"}
+SLOW_ACTIONS = {"SLOWER", "DECELERATE", "BRAKE"}
+FAST_ACTIONS = {"FASTER", "ACCELERATE"}
+IDLE_ACTIONS = {"IDLE", "KEEP", "MAINTAIN"}
+
+FRONT_DISTANCE_SCORE_HORIZON = 120.0
