@@ -68,14 +68,15 @@ submission; each array task then audits and trains one seed, while all three
 reward conditions in a seed share the same scenario schedule.
 
 ```bash
-python -m pip install -r requirements-pilot.txt
-sbatch scripts/katana_single_lane_stratified.slurm
+module load python/3.11.3
+source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
+qsub scripts/katana_single_lane_stratified.pbs
 ```
 
 The array uses seeds `0-4` and writes
-`outputs/single_lane_slow_front_stratified_100k_seed<seed>`. Adjust the Slurm
-time, memory, account, or partition directives if required by the Katana
-project allocation, but keep the experiment arguments frozen.
+`/srv/scratch/$USER/highway_transition_timing/outputs/single_lane_slow_front_stratified_100k_seed<seed>`.
+Adjust the OpenPBS walltime, memory, project, or queue directives if required
+by the Katana allocation, but keep the experiment arguments frozen.
 
 The default `stratified` block contains 4 no-front, 4 non-closing-front,
 2 near-closing-front, 8 visible slow-front, and 2 delayed-visible-front

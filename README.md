@@ -55,7 +55,7 @@ PYTHONPATH=src python experiments/single_lane_slow_front/run.py \
 Submit the validated five-seed array on Katana:
 
 ```bash
-sbatch scripts/katana_single_lane_stratified.slurm
+qsub scripts/katana_single_lane_stratified.pbs
 ```
 
 See `experiments/single_lane_slow_front/README.md` for reset strata,
@@ -85,7 +85,7 @@ experiments/
 ├── single_lane_slow_front/
 └── multilane_open_lane_change/
 scripts/
-├── katana_single_lane_stratified.slurm
+├── katana_single_lane_stratified.pbs
 └── plot_training_diagnostics.py
 src/highway_transition_timing/
 tests/
