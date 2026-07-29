@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#PBS -N single-lane-stratified
+#PBS -J 0-4
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=02:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR}"
+
+# 使用你预先创建的 Python 环境
+source "${HOME}/venvs/highway-transition/bin/activate"
+
+RUN_SEED="${PBS_ARRAY_INDEX}"
+RUN_NAME="single_lane_slow_front_stratified_100k_seed${RUN_SEED}"
+
+# 实验结果建议写到 scratch
+OUTPUT_ROOT="/srv/scratch/${USER}/highway_transition_timing/outputs"
+mkdir -p "${OUTPUT_ROOT}"
+
+PYTHONPATH=src python experiments/single_lane_slow_front/run.py audit \
+  --out "${OUTPUT_ROOT}/${RUN_NAME}_audit" \
+  --num-resets 2000 \
+  --seed "${RUN_SEED}"
+
+PYTHONPATH=src python experiments/single_lane_slow_front/run.py \
+  --out "${OUTPUT_ROOT}/${RUN_NAME}" \
+  --agents FD BAL SP \
+  --timesteps 100000 \
+  --num-exposures 36 \
+  --duration 120 \
+  --evaluation-duration 120 \
+  --seed "${RUN_SEED}" \
+  --bootstrap-samples 500 \
+  --verbose 0
