@@ -344,7 +344,9 @@ def plot_paired_timing_gaps(
     data = [grouped[label] for label in labels]
     fig, ax = plt.subplots(figsize=(7.2, 4.2))
     ax.axhline(0, color="#333333", linewidth=1.0, linestyle="--")
-    ax.boxplot(data, labels=labels, showfliers=False)
+    ax.boxplot(data, showfliers=False)
+    ax.set_xticks(range(1, len(labels) + 1))
+    ax.set_xticklabels(labels)
     for idx, values in enumerate(data, start=1):
         xs = [idx + ((i % 7) - 3) * 0.018 for i, _ in enumerate(values)]
         ax.scatter(xs, values, s=28, color="#2F6B8F", alpha=0.82, zorder=3)
