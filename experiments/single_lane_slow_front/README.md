@@ -138,3 +138,19 @@ Outputs:
 - `rollout_counterfactual_front_vehicle/<variant>/analysis/episode_outcomes.csv`;
 - `rollout_counterfactual_front_vehicle/<variant>/analysis/gap_summary.csv`;
 - `rollout_counterfactual_front_vehicle/counterfactual_rollout_summary.csv`.
+
+## Five-seed R figures
+
+After the five `single_lane_slow_front_stratified_100k_seed{0..4}` directories
+are available locally, generate the cross-seed training and counterfactual
+figures with:
+
+```bash
+R_LIBS_USER=tmp/r-lib Rscript \
+  experiments/single_lane_slow_front/plot_multiseed_results.R
+```
+
+The script requires `ggplot2`, `patchwork`, `dplyr`, `tidyr`, `readr`,
+`svglite`, `ragg`, and `scales`. It writes editable SVG/PDF, 600-dpi TIFF,
+300-dpi PNG, and source-data CSV files under
+`outputs/single_lane_slow_front_stratified_100k_multiseed/figures/`.

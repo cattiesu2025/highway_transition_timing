@@ -7,11 +7,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class AnalysisConfig:
-    """Tunable settings for the planned matched-exposure analysis.
+    """Tunable settings for the matched-exposure transition-timing analysis.
 
-    The defaults encode the plan's main setting: persistence window ``k = 3``
-    and a short-gap bridge length of ``r = 1``. Thresholds are intentionally
-    simple because this is the fallback rule-based detector, not a TCAV model.
+    The defaults use a persistence window of ``k = 3`` and a short-gap bridge
+    length of ``r = 1``. The remaining thresholds control rule-based mode
+    grounding from observable rollout features.
     """
 
     persistence_k: int = 3

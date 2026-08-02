@@ -1,9 +1,8 @@
-"""Rule-based fallback mode grounding.
+"""Rule-based mode grounding for the transition-timing pipeline.
 
-The plan prefers TCAV/probe-assisted mode evidence when activations are
-available. This module implements the planned fallback path over observable
-state, action, and diagnostic-score features so the transition-timing analysis
-can run on ordinary rollout tables.
+This module maps observable state, action, and diagnostic-score features to
+human-readable behavioural modes. It then carries compatible IDLE steps
+forward and bridges short label interruptions before transition extraction.
 """
 
 from __future__ import annotations
