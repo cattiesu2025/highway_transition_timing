@@ -65,6 +65,23 @@ PYTHONPATH=src python experiments/multilane_open_lane_change/run.py \
   --verbose 0
 ```
 
+## Five-Seed Katana Retraining
+
+Submit the OpenPBS array from the project root on Katana:
+
+```bash
+qsub scripts/katana_multilane_open_lane_change.pbs
+```
+
+Array indices 0-4 are used as training seeds. Each task trains FD, BAL, and SP
+for 100,000 steps with the same deterministic within-seed reset schedule, 20%
+no-front training resets, and 36 matched evaluation exposures. Outputs are
+written to:
+
+```text
+/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_mixed_100k_seed<seed>/
+```
+
 ## Outputs
 
 The run writes:

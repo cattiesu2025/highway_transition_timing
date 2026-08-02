@@ -75,6 +75,15 @@ PYTHONPATH=src python experiments/multilane_open_lane_change/run.py \
   --bootstrap-samples 500
 ```
 
+Submit the five-seed multi-lane retraining array on Katana:
+
+```bash
+qsub scripts/katana_multilane_open_lane_change.pbs
+```
+
+Each array task trains FD, BAL, and SP for one seed and writes to
+`/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_mixed_100k_seed<seed>/`.
+
 See `experiments/multilane_open_lane_change/README.md` for smoke tests,
 counterfactual rollouts, and report-figure generation.
 
@@ -85,6 +94,7 @@ experiments/
 ├── single_lane_slow_front/
 └── multilane_open_lane_change/
 scripts/
+├── katana_multilane_open_lane_change.pbs
 ├── katana_single_lane_stratified.pbs
 └── plot_training_diagnostics.py
 src/highway_transition_timing/
