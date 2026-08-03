@@ -82,6 +82,16 @@ written to:
 /srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_mixed_100k_seed<seed>/
 ```
 
+After all models exist, submit the corrected 120-second four-variant rollout
+array without retraining:
+
+```bash
+qsub scripts/katana_multilane_counterfactual_rollout.pbs
+```
+
+Each task writes `rollout_counterfactual_open_lane/` beneath its existing
+seed-specific run directory.
+
 ## Outputs
 
 The run writes:
@@ -132,6 +142,12 @@ This writes per-step rollouts, episode-level first lane-change times, and paired
 `no-front - original` summaries under
 `RUN_DIR/rollout_counterfactual_open_lane/`.
 
+`duration` and `evaluation-duration` are physical seconds. With the default
+5 Hz policy frequency, a 120-second counterfactual contains at most 600 policy
+steps. Episode summaries keep the first command, first observed lateral motion,
+and first post-step physical lane-index change separate; the physical change is
+the primary realised event for this experiment.
+
 After running all four variants, regenerate the report figures:
 
 ```bash
@@ -156,7 +172,7 @@ Primary analysis target:
 lane_change_onset
 ```
 
-The main pipeline detects stable lane-change evidence using lane-change actions
-and lane-index changes. The additional
-`actual_lane_change_summary.csv` is included because a lane-change action and a
-completed physical lane change are not always the same event.
+The generic pipeline still reports persistence-based stable lane-change
+evidence as a diagnostic. `actual_lane_change_summary.csv` is the primary
+realised-event table because a high-level lane-change command, lateral motion,
+and a completed physical lane-index change are not always the same event.

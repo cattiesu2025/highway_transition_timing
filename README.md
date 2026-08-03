@@ -84,6 +84,12 @@ qsub scripts/katana_multilane_open_lane_change.pbs
 Each array task trains FD, BAL, and SP for one seed and writes to
 `/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_mixed_100k_seed<seed>/`.
 
+Run the four matched full-rollout counterfactuals on those completed models:
+
+```bash
+qsub scripts/katana_multilane_counterfactual_rollout.pbs
+```
+
 See `experiments/multilane_open_lane_change/README.md` for smoke tests,
 counterfactual rollouts, and report-figure generation.
 

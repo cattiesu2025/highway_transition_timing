@@ -38,7 +38,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Output directory (default: RUN_DIR/rollout_counterfactual_open_lane).",
     )
     parser.add_argument("--num-exposures", type=int, default=36)
-    parser.add_argument("--evaluation-duration", type=int, default=120)
+    parser.add_argument(
+        "--evaluation-duration",
+        type=int,
+        default=120,
+        help="Counterfactual rollout horizon in physical seconds.",
+    )
     parser.add_argument("--agents", nargs="+", choices=AGENTS, default=list(AGENTS))
     parser.add_argument(
         "--variants",
@@ -69,6 +74,7 @@ def config_from_training_run(
     return module.ExperimentConfig(
         evaluation_duration=evaluation_duration,
         seed=int(row.get("seed", 0)),
+        policy_frequency=int(row.get("policy_frequency_hz", 5)),
         observation_normalize=parse_bool(
             row.get("observation_normalize", ""),
             True,
@@ -164,7 +170,7 @@ def rollout_variant(
             done = False
             t = 0
             lane_change_count = 0
-            while not done and t < config.evaluation_duration:
+            while not done and t < config.evaluation_max_policy_steps:
                 action, q_values = module.predict_action_and_scores(
                     models[agent],
                     obs,
@@ -177,7 +183,9 @@ def rollout_variant(
                 pre_step = module.extract_diagnostics(env)
                 next_obs, reward, terminated, truncated, _info = env.step(int(action))
                 post_step = module.extract_diagnostics(env)
-                done = bool(terminated or truncated)
+                environment_done = bool(terminated or truncated)
+                reached_horizon = t + 1 >= config.evaluation_max_policy_steps
+                done = environment_done or reached_horizon
                 collision = bool(post_step["collision_flag"])
                 row = module.step_row_from_diagnostics(
                     diagnostics=pre_step,
@@ -196,8 +204,11 @@ def rollout_variant(
                     reward_components=getattr(env, "last_reward_components", {}),
                     collision_flag=collision,
                     done=done,
-                    termination_reason=(
-                        "collision" if collision else ("duration" if done else "")
+                    termination_reason=module.episode_termination_reason(
+                        collision=collision,
+                        terminated=bool(terminated),
+                        truncated=bool(truncated),
+                        reached_horizon=reached_horizon,
                     ),
                     lane_change_count=lane_change_count,
                     exposure_t=spec.exposure_t,
@@ -213,8 +224,12 @@ def rollout_variant(
                         ),
                         "counterfactual_variant": variant,
                         "include_front_vehicle": settings["include_front_vehicle"],
+                        "environment_terminated": bool(terminated),
+                        "environment_truncated": bool(truncated),
+                        "analysis_horizon_reached": reached_horizon,
                     }
                 )
+                row.update(module.policy_time_fields(t, spec.exposure_t, config))
                 step_rows.append(row)
                 obs = next_obs
                 t += 1
@@ -423,7 +438,10 @@ def main(argv: list[str] | None = None) -> int:
         variant_dir = output_dir / variant
         module.write_csv_rows(variant_dir / "evaluation" / "steps.csv", steps)
         module.write_csv_rows(variant_dir / "evaluation" / "exposures.csv", exposures)
-        episodes = module.summarize_actual_lane_changes(steps)
+        episodes = module.summarize_actual_lane_changes(
+            steps,
+            config.policy_frequency,
+        )
         for row in episodes:
             row["counterfactual_variant"] = variant
         module.write_csv_rows(

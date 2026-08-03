@@ -10,6 +10,7 @@ lane-change timing when lane change is available.
 from __future__ import annotations
 
 import argparse
+import json
 import random
 import sys
 from collections import Counter
@@ -87,12 +88,24 @@ class ExperimentConfig:
     no_front_train_fraction: float = 0.2
 
     def __post_init__(self) -> None:
+        if self.duration <= 0 or self.evaluation_duration <= 0:
+            raise ValueError("duration values must be positive seconds")
+        if self.policy_frequency <= 0 or self.simulation_frequency <= 0:
+            raise ValueError("simulation frequencies must be positive")
         if self.lanes_count < 2:
             raise ValueError("lanes_count must be >= 2 for a multi-lane experiment")
         if not 0 <= self.ego_lane < self.lanes_count:
             raise ValueError("ego_lane must be a valid lane index")
         if not 0.0 <= self.no_front_train_fraction <= 1.0:
             raise ValueError("no_front_train_fraction must be in [0, 1]")
+
+    @property
+    def policy_step_seconds(self) -> float:
+        return 1.0 / self.policy_frequency
+
+    @property
+    def evaluation_max_policy_steps(self) -> int:
+        return int(round(self.evaluation_duration * self.policy_frequency))
 
 
 @dataclass(frozen=True)
@@ -186,8 +199,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--timesteps", type=int, default=20_000)
     parser.add_argument("--num-exposures", type=int, default=36)
     parser.add_argument("--agents", nargs="+", default=list(AGENTS))
-    parser.add_argument("--duration", type=int, default=120)
-    parser.add_argument("--evaluation-duration", type=int, default=120)
+    parser.add_argument(
+        "--duration",
+        type=int,
+        default=120,
+        help="Training episode duration in physical seconds.",
+    )
+    parser.add_argument(
+        "--evaluation-duration",
+        type=int,
+        default=120,
+        help="Evaluation horizon in physical seconds.",
+    )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--lanes-count", type=int, default=4)
     parser.add_argument("--ego-lane", type=int, default=1)
@@ -432,6 +455,11 @@ def train_agents(
                 if config.collision_penalty is not None
                 else "",
                 "experiment": "multilane_open_lane_change",
+                "training_duration_seconds": config.duration,
+                "evaluation_duration_seconds": config.evaluation_duration,
+                "policy_frequency_hz": config.policy_frequency,
+                "policy_step_seconds": round(config.policy_step_seconds, 6),
+                "evaluation_max_policy_steps": config.evaluation_max_policy_steps,
                 "training_no_front_fraction": config.no_front_train_fraction,
                 "training_scene_counts": json_dumps(training_counts),
                 "action_space": "LANE_LEFT,IDLE,LANE_RIGHT,FASTER,SLOWER",
@@ -477,7 +505,7 @@ def evaluate_agents(
             done = False
             t = 0
             lane_change_action_count = 0
-            while not done and t < config.evaluation_duration:
+            while not done and t < config.evaluation_max_policy_steps:
                 action, q_values = predict_action_and_scores(model, obs, deterministic=True)
                 action_name = action_name_from_env(env, int(action))
                 if action_name in LANE_CHANGE_ACTIONS:
@@ -486,7 +514,9 @@ def evaluate_agents(
                 pre_step_diagnostics = extract_diagnostics(env)
                 next_obs, reward, terminated, truncated, _info = env.step(int(action))
                 post_step_diagnostics = extract_diagnostics(env)
-                done = bool(terminated or truncated)
+                environment_done = bool(terminated or truncated)
+                reached_horizon = t + 1 >= config.evaluation_max_policy_steps
+                done = environment_done or reached_horizon
                 collision = bool(post_step_diagnostics["collision_flag"])
                 row = step_row_from_diagnostics(
                     diagnostics=pre_step_diagnostics,
@@ -505,7 +535,12 @@ def evaluate_agents(
                     reward_components=getattr(env, "last_reward_components", {}),
                     collision_flag=collision,
                     done=done,
-                    termination_reason="collision" if collision else ("duration" if done else ""),
+                    termination_reason=episode_termination_reason(
+                        collision=collision,
+                        terminated=bool(terminated),
+                        truncated=bool(truncated),
+                        reached_horizon=reached_horizon,
+                    ),
                     lane_change_count=lane_change_action_count,
                     exposure_t=spec.exposure_t,
                 )
@@ -517,6 +552,10 @@ def evaluate_agents(
                 row["actual_lane_changed_after_step"] = (
                     row["lane_delta_after_step"] != 0
                 )
+                row["environment_terminated"] = bool(terminated)
+                row["environment_truncated"] = bool(truncated)
+                row["analysis_horizon_reached"] = reached_horizon
+                row.update(policy_time_fields(t, spec.exposure_t, config))
                 row["blockers"] = "none"
                 row["background_vehicles"] = 0
                 step_rows.append(row)
@@ -568,7 +607,43 @@ def exposure_row_from_spec(
         ),
         "exposure_source": "multilane_open_lane_change",
         "exposure_difficulty_bin": "open_lane_slow_front",
+        "evaluation_duration_seconds": config.evaluation_duration,
+        "policy_frequency_hz": config.policy_frequency,
+        "policy_step_seconds": round(config.policy_step_seconds, 6),
+        "evaluation_max_policy_steps": config.evaluation_max_policy_steps,
     }
+
+
+def policy_time_fields(
+    t: int,
+    exposure_t: int,
+    config: ExperimentConfig,
+) -> dict[str, float | int]:
+    return {
+        "t_seconds": round(t * config.policy_step_seconds, 6),
+        "post_step_t_seconds": round((t + 1) * config.policy_step_seconds, 6),
+        "exposure_t_seconds": round(
+            exposure_t * config.policy_step_seconds,
+            6,
+        ),
+        "policy_frequency_hz": config.policy_frequency,
+        "policy_step_seconds": round(config.policy_step_seconds, 6),
+    }
+
+
+def episode_termination_reason(
+    collision: bool,
+    terminated: bool,
+    truncated: bool,
+    reached_horizon: bool,
+) -> str:
+    if collision:
+        return "collision"
+    if truncated or reached_horizon:
+        return "duration"
+    if terminated:
+        return "terminal"
+    return ""
 
 
 def write_analysis(
@@ -596,7 +671,7 @@ def write_analysis(
         write_csv_rows(analysis_dir / f"{name}.csv", rows)
     write_csv_rows(
         analysis_dir / "actual_lane_change_summary.csv",
-        summarize_actual_lane_changes(steps),
+        summarize_actual_lane_changes(steps, config.policy_frequency),
     )
     write_csv_rows(analysis_dir / "action_summary.csv", summarize_actions(steps))
     if figures:
@@ -612,6 +687,7 @@ def write_analysis(
 
 def summarize_actual_lane_changes(
     steps: Sequence[Mapping[str, Any]],
+    policy_frequency: int = 5,
 ) -> list[dict[str, Any]]:
     by_episode: dict[str, list[Mapping[str, Any]]] = {}
     for row in steps:
@@ -623,8 +699,21 @@ def summarize_actual_lane_changes(
         if not ordered:
             continue
         initial_lane = int(ordered[0]["ego_lane"])
+        initial_lateral_position = lateral_position(ordered[0])
         first_action_t = first_t(
             row for row in ordered if str(row["action"]) in LANE_CHANGE_ACTIONS
+        )
+        first_lateral_motion_t = (
+            first_t(
+                row
+                for row in ordered
+                if (
+                    (position := lateral_position(row)) is not None
+                    and abs(position - initial_lateral_position) > 0.05
+                )
+            )
+            if initial_lateral_position is not None
+            else None
         )
         first_actual_t = first_t(
             row
@@ -632,7 +721,36 @@ def summarize_actual_lane_changes(
             if int(row.get("post_ego_lane", row["ego_lane"])) != initial_lane
             or int(row["ego_lane"]) != initial_lane
         )
-        collision = any(bool(row.get("collision_flag")) for row in ordered)
+        first_action = next(
+            (
+                str(row["action"])
+                for row in ordered
+                if str(row["action"]) in LANE_CHANGE_ACTIONS
+            ),
+            "",
+        )
+        first_actual_row = next(
+            (
+                row
+                for row in ordered
+                if int(row.get("post_ego_lane", row["ego_lane"])) != initial_lane
+                or int(row["ego_lane"]) != initial_lane
+            ),
+            None,
+        )
+        actual_lane = (
+            int(first_actual_row.get("post_ego_lane", first_actual_row["ego_lane"]))
+            if first_actual_row is not None
+            else None
+        )
+        actual_direction = (
+            "LANE_RIGHT"
+            if actual_lane is not None and actual_lane > initial_lane
+            else "LANE_LEFT"
+            if actual_lane is not None and actual_lane < initial_lane
+            else ""
+        )
+        collision = any(parse_bool_like(row.get("collision_flag")) for row in ordered)
         rows.append(
             {
                 "episode_id": episode_id,
@@ -640,7 +758,20 @@ def summarize_actual_lane_changes(
                 "exposure_id": ordered[0]["exposure_id"],
                 "initial_lane": initial_lane,
                 "first_lane_change_action_t": blank_if_none(first_action_t),
+                "first_lane_change_action_seconds": seconds_from_decision_t(
+                    first_action_t,
+                    policy_frequency,
+                ),
+                "first_lateral_motion_t": blank_if_none(first_lateral_motion_t),
+                "first_lateral_motion_seconds": seconds_from_decision_t(
+                    first_lateral_motion_t,
+                    policy_frequency,
+                ),
                 "first_actual_lane_change_t": blank_if_none(first_actual_t),
+                "first_actual_lane_change_seconds": seconds_from_post_step_t(
+                    first_actual_t,
+                    policy_frequency,
+                ),
                 "action_to_actual_delay": (
                     first_actual_t - first_action_t
                     if first_action_t is not None and first_actual_t is not None
@@ -650,11 +781,51 @@ def summarize_actual_lane_changes(
                     1 for row in ordered if str(row["action"]) in LANE_CHANGE_ACTIONS
                 ),
                 "actual_lane_change_observed": first_actual_t is not None,
+                "first_lane_change_action_direction": first_action,
+                "first_actual_lane_change_direction": actual_direction,
+                "first_action_direction_matches_actual": (
+                    first_action == actual_direction
+                    if first_action and actual_direction
+                    else ""
+                ),
                 "collision_flag": collision,
                 "terminal_t": ordered[-1]["t"],
+                "recording_horizon_seconds": round(
+                    (int(ordered[-1]["t"]) + 1) / policy_frequency,
+                    6,
+                ),
             }
         )
     return rows
+
+
+def lateral_position(row: Mapping[str, Any]) -> float | None:
+    value = row.get("ego_position")
+    if value in (None, ""):
+        return None
+    try:
+        position = json.loads(value) if isinstance(value, str) else value
+        return float(position[1])
+    except (IndexError, TypeError, ValueError, json.JSONDecodeError):
+        return None
+
+
+def parse_bool_like(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes"}
+    return bool(value)
+
+
+def seconds_from_decision_t(value: int | None, policy_frequency: int) -> float | str:
+    if value is None:
+        return ""
+    return round(value / policy_frequency, 6)
+
+
+def seconds_from_post_step_t(value: int | None, policy_frequency: int) -> float | str:
+    if value is None:
+        return ""
+    return round((value + 1) / policy_frequency, 6)
 
 
 def summarize_actions(steps: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:

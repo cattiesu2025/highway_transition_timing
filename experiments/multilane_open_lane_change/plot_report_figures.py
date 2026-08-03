@@ -429,17 +429,40 @@ def summarize_rollout_counterfactual_rows(
 
     summary: dict[tuple[str, str], dict[str, Any]] = {}
     for key, group in grouped.items():
+        use_seconds = all(
+            "first_actual_lane_change_seconds" in row for row in group
+        )
+        event_key = (
+            "first_actual_lane_change_seconds"
+            if use_seconds
+            else "first_actual_lane_change_t"
+        )
         observed = [
-            float(row["first_actual_lane_change_t"])
+            float(row[event_key])
             for row in group
-            if row["first_actual_lane_change_t"] != ""
+            if row[event_key] != ""
         ]
+        horizon_values = (
+            [
+                float(row["recording_horizon_seconds"])
+                for row in group
+                if row.get("recording_horizon_seconds", "") != ""
+            ]
+            if use_seconds
+            else [
+                float(row["terminal_t"]) + 1.0
+                for row in group
+                if row.get("terminal_t", "") != ""
+            ]
+        )
         summary[key] = {
             "n": len(group),
             "observed": observed,
             "n_observed": len(observed),
             "n_censored": len(group) - len(observed),
             "median": median(observed) if observed else None,
+            "time_unit": "seconds" if use_seconds else "policy_steps",
+            "horizon": max(horizon_values) if horizon_values else 120.0,
         }
     return summary
 
@@ -561,6 +584,12 @@ def plot_rollout_counterfactual_summary_grid(run_dir: Path) -> bool:
     add_panel_label(ax_rate, "a")
 
     timing_variants = ("original", "matched-speed-front", "far-front")
+    time_unit = str(summary[(AGENTS[0], VARIANTS[0])]["time_unit"])
+    horizon = max(
+        float(summary[(agent, variant)]["horizon"])
+        for agent in AGENTS
+        for variant in VARIANTS
+    )
     y_positions = {
         "original": 2.0,
         "matched-speed-front": 1.0,
@@ -575,11 +604,22 @@ def plot_rollout_counterfactual_summary_grid(run_dir: Path) -> bool:
                 float(value)
                 for value in summary[(agent, variant)]["observed"]
             ]
+            y_value = base_y + offsets[agent]
+            color = AGENT_COLORS[agent]
+            if not observed:
+                ax_time.text(
+                    0.02 * horizon,
+                    y_value,
+                    "no event",
+                    ha="left",
+                    va="center",
+                    fontsize=6.8,
+                    color=color,
+                )
+                continue
             med = float(median(observed))
             q1 = quantile(observed, 0.25)
             q3 = quantile(observed, 0.75)
-            y_value = base_y + offsets[agent]
-            color = AGENT_COLORS[agent]
             ax_time.hlines(
                 y_value,
                 q1,
@@ -601,7 +641,7 @@ def plot_rollout_counterfactual_summary_grid(run_dir: Path) -> bool:
                 label=agent if variant == "original" else "_nolegend_",
             )
             ax_time.text(
-                med + 2.2,
+                med + 0.02 * horizon,
                 y_value,
                 f"{med:g}",
                 ha="left",
@@ -619,10 +659,15 @@ def plot_rollout_counterfactual_summary_grid(run_dir: Path) -> bool:
         ],
         fontsize=7.5,
     )
-    ax_time.set_xlim(0, 112)
+    ax_time.set_xlim(0, horizon)
     ax_time.set_ylim(-0.55, 2.55)
-    ax_time.set_xticks([0, 20, 40, 60, 80, 100])
-    ax_time.set_xlabel("First actual lane-change latency (policy steps)", fontsize=8)
+    ax_time.xaxis.set_major_locator(mpl.ticker.MaxNLocator(nbins=5))
+    ax_time.set_xlabel(
+        "First actual lane-change latency (seconds)"
+        if time_unit == "seconds"
+        else "First actual lane-change latency (policy steps)",
+        fontsize=8,
+    )
     ax_time.grid(axis="x", color="#E5E7EB", linewidth=0.7)
     ax_time.set_axisbelow(True)
     ax_time.legend(
@@ -699,7 +744,12 @@ def plot_rollout_counterfactual_cumulative_incidence(run_dir: Path) -> bool:
     if summary is None:
         return False
 
-    horizon = 120.0
+    horizon = max(
+        float(summary[(agent, variant)]["horizon"])
+        for agent in AGENTS
+        for variant in VARIANTS
+    )
+    time_unit = str(summary[(AGENTS[0], VARIANTS[0])]["time_unit"])
     fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.8), sharex=True, sharey=True)
     for ax, agent in zip(axes, AGENTS, strict=True):
         for variant in VARIANTS:
@@ -728,14 +778,19 @@ def plot_rollout_counterfactual_cumulative_incidence(run_dir: Path) -> bool:
         ax.set_title(agent, fontsize=9.5, pad=6)
         ax.set_xlim(0, horizon)
         ax.set_ylim(-0.035, 1.035)
-        ax.set_xticks([0, 30, 60, 90, 120])
+        ax.xaxis.set_major_locator(mpl.ticker.MaxNLocator(nbins=4))
         ax.set_yticks([0.0, 0.25, 0.5, 0.75, 1.0])
         ax.yaxis.set_major_formatter(mpl.ticker.PercentFormatter(1.0, decimals=0))
         ax.grid(axis="y", color="#E5E7EB", linewidth=0.7)
         ax.set_axisbelow(True)
 
     axes[0].set_ylabel("Cumulative lane-change incidence", fontsize=8)
-    axes[1].set_xlabel("Policy steps after exposure", fontsize=8)
+    axes[1].set_xlabel(
+        "Seconds after exposure"
+        if time_unit == "seconds"
+        else "Policy steps after exposure",
+        fontsize=8,
+    )
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(
         handles,
@@ -769,7 +824,8 @@ def plot_rollout_counterfactual_cumulative_incidence(run_dir: Path) -> bool:
         (
             "Actual lane-index changes; "
             f"n={exposure_count_label} matched exposures per condition. "
-            "Episodes without an event are right-censored at 120 steps."
+            "Episodes without an event are right-censored at "
+            f"{horizon:g} {'seconds' if time_unit == 'seconds' else 'steps'}."
         ),
         ha="center",
         va="bottom",

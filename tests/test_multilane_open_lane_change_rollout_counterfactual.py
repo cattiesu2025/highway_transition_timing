@@ -129,6 +129,8 @@ def test_report_summary_keeps_observed_and_censored_lane_changes_separate():
         "n_observed": 2,
         "n_censored": 1,
         "median": 12.0,
+        "time_unit": "policy_steps",
+        "horizon": 120.0,
     }
 
     x_values, y_values = plot_module.cumulative_incidence_points(
@@ -138,6 +140,39 @@ def test_report_summary_keeps_observed_and_censored_lane_changes_separate():
     )
     assert x_values == [0.0, 10.0, 14.0, 120.0]
     assert y_values == [0.0, 0.25, 0.5, 0.5]
+
+
+def test_report_summary_prefers_physical_seconds_and_recorded_horizon():
+    plot_module = load_plot_module()
+
+    summary = plot_module.summarize_rollout_counterfactual_rows(
+        [
+            {
+                "agent_condition": "BAL",
+                "counterfactual_variant": "original",
+                "first_actual_lane_change_t": "8",
+                "first_actual_lane_change_seconds": "1.8",
+                "recording_horizon_seconds": "120",
+            },
+            {
+                "agent_condition": "BAL",
+                "counterfactual_variant": "original",
+                "first_actual_lane_change_t": "",
+                "first_actual_lane_change_seconds": "",
+                "recording_horizon_seconds": "120",
+            },
+        ]
+    )
+
+    assert summary[("BAL", "original")] == {
+        "n": 2,
+        "observed": [1.8],
+        "n_observed": 1,
+        "n_censored": 1,
+        "median": 1.8,
+        "time_unit": "seconds",
+        "horizon": 120.0,
+    }
 
 
 def test_initial_action_summary_rejects_stale_exposure_count(tmp_path):

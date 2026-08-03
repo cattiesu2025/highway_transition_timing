@@ -106,6 +106,24 @@ def test_no_front_training_fraction_is_validated():
         module.ExperimentConfig(no_front_train_fraction=1.01)
 
 
+def test_evaluation_duration_is_converted_from_seconds_to_policy_steps():
+    module = load_experiment_module()
+    config = module.ExperimentConfig(
+        evaluation_duration=120,
+        policy_frequency=5,
+    )
+
+    assert config.policy_step_seconds == pytest.approx(0.2)
+    assert config.evaluation_max_policy_steps == 600
+    assert module.policy_time_fields(4, 0, config) == {
+        "t_seconds": 0.8,
+        "post_step_t_seconds": 1.0,
+        "exposure_t_seconds": 0.0,
+        "policy_frequency_hz": 5,
+        "policy_step_seconds": 0.2,
+    }
+
+
 def test_actual_lane_change_summary_separates_action_and_actual_lane_change():
     module = load_experiment_module()
     steps = [
@@ -116,8 +134,9 @@ def test_actual_lane_change_summary_separates_action_and_actual_lane_change():
             "t": 0,
             "ego_lane": 1,
             "post_ego_lane": 1,
+            "ego_position": "[100.0,4.0]",
             "action": "LANE_RIGHT",
-            "collision_flag": False,
+            "collision_flag": "False",
         },
         {
             "episode_id": "FD_M0000_r0",
@@ -126,13 +145,20 @@ def test_actual_lane_change_summary_separates_action_and_actual_lane_change():
             "t": 1,
             "ego_lane": 1,
             "post_ego_lane": 2,
+            "ego_position": "[105.0,4.8]",
             "action": "IDLE",
-            "collision_flag": False,
+            "collision_flag": "False",
         },
     ]
 
     [summary] = module.summarize_actual_lane_changes(steps)
 
     assert summary["first_lane_change_action_t"] == 0
+    assert summary["first_lane_change_action_seconds"] == 0.0
+    assert summary["first_lateral_motion_t"] == 1
+    assert summary["first_lateral_motion_seconds"] == 0.2
     assert summary["first_actual_lane_change_t"] == 1
+    assert summary["first_actual_lane_change_seconds"] == 0.4
     assert summary["action_to_actual_delay"] == 1
+    assert summary["first_action_direction_matches_actual"] is True
+    assert summary["collision_flag"] is False
