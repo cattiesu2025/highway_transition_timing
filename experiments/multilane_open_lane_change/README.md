@@ -27,23 +27,44 @@ This experiment is not the final Highway result. It is a clean diagnostic:
 
 ## Run A Smoke Test
 
-Training uses the same negative-control mixture as the single-lane sanity
-experiment:
+Training defaults to the same deterministic shuffled 20-reset block as the
+single-lane experiment:
 
-- 80% slow-front episodes;
-- 20% no-front cruise episodes.
+- 4 no-front controls;
+- 2 exact matched-speed controls;
+- 2 strictly non-closing-front controls;
+- 2 near-closing-front scenes;
+- 8 visible slow-front scenes, two in each frozen TTC/deceleration cell;
+- 2 gradual boundary-visible slow-front scenes.
 
-The no-front fraction is configurable, and the actual sampled reset counts are
-written to `training_runs.csv`.
+All front-vehicle training scenes are visible at reset. This avoids assigning
+conflicting actions to the same empty observation in no-front and initially
+hidden-hazard episodes; the feed-forward DQN has no memory with which to
+distinguish those states.
+
+First audit the generator without training:
+
+```bash
+PYTHONPATH=src python experiments/multilane_open_lane_change/run.py audit \
+  --out outputs/multilane_open_lane_change_stratified_training_audit_seed0 \
+  --num-resets 2000 \
+  --seed 0
+```
+
+The audit writes every sampled scene and its family, scene seed, block
+position, net gap, closing speed, TTC, required deceleration, visibility, and
+difficulty labels.
 
 ```bash
 PYTHONPATH=src python experiments/multilane_open_lane_change/run.py \
-  --out outputs/multilane_open_lane_change_mixed_20k_smoke \
+  --out outputs/multilane_open_lane_change_stratified_20k_smoke \
   --timesteps 20000 \
   --num-exposures 36 \
   --duration 120 \
   --evaluation-duration 120 \
-  --no-front-train-fraction 0.2 \
+  --training-scenario-profile stratified \
+  --near-matched-speed-delta 2.0 \
+  --lane-change-penalty 0.2 \
   --slow-down-penalty 0.2 \
   --collision-risk-penalty 3.0 \
   --bootstrap-samples 500
@@ -53,13 +74,13 @@ For a fast code smoke:
 
 ```bash
 PYTHONPATH=src python experiments/multilane_open_lane_change/run.py \
-  --out outputs/multilane_open_lane_change_mixed_tiny_smoke \
+  --out outputs/multilane_open_lane_change_stratified_tiny_smoke \
   --timesteps 200 \
   --num-exposures 36 \
   --agents FD \
   --duration 20 \
   --evaluation-duration 20 \
-  --no-front-train-fraction 0.2 \
+  --training-scenario-profile stratified \
   --bootstrap-samples 10 \
   --no-figures \
   --verbose 0
@@ -74,29 +95,54 @@ qsub scripts/katana_multilane_open_lane_change.pbs
 ```
 
 Array indices 0-4 are used as training seeds. Each task trains FD, BAL, and SP
-for 100,000 steps with the same deterministic within-seed reset schedule, 20%
-no-front training resets, and 36 matched evaluation exposures. Outputs are
+for 100,000 steps with the same deterministic within-seed 20-reset schedule
+and 36 matched development-validation exposures. Outputs are
 written to:
 
 ```text
-/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_mixed_100k_seed<seed>/
+/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_stratified_100k_seed<seed>/
 ```
 
-After all models exist, submit the corrected 120-second four-variant rollout
-array without retraining:
+The development-validation rollout produced by this command is not the sealed
+held-out evaluation. The versioned held-out grid is fixed before five-seed
+training, but model inference on it is run only after the five completed runs
+pass their training-integrity and development checks.
+
+The existing `katana_multilane_counterfactual_rollout.pbs` remains tied to the
+earlier `mixed_100k` diagnostic models. Do not use it as the final evaluation
+of this retraining iteration.
+
+## Sealed Held-Out Evaluation
+
+The final grid is the versioned file `heldout_grid_v1.csv`. It contains a
+36-scene full factorial with ego speeds 25/27/29 m/s, front distances
+130/170/210/250 m, and front speeds 11/15/19 m/s. All three marginal value
+sets are disjoint from the 36-scene development grid, and exposure seeds
+9000000-9000035 are fixed across training seeds. Its frozen SHA-256 is:
+
+```text
+d861b169fb618b0053f972f128fa498d3249d48969209db99e342af7732e6964
+```
+
+The loader refuses to run if that checksum changes. After all five new
+training runs pass their development checks, submit:
 
 ```bash
-qsub scripts/katana_multilane_counterfactual_rollout.pbs
+qsub scripts/katana_multilane_heldout_rollout.pbs
 ```
 
-Each task writes `rollout_counterfactual_open_lane/` beneath its existing
-seed-specific run directory.
+Each array task evaluates one independently trained seed on the identical
+sealed original/no-front/matched-speed-front/far-front scenes and writes to
+`RUN_DIR/rollout_counterfactual_heldout/`. The output includes
+`evaluation_grid_manifest.csv`, which records the checksum and exposure count.
 
 ## Outputs
 
 The run writes:
 
 - `training_runs.csv`: model paths, reward settings, observation settings.
+- `training_scenarios.csv`: reset-by-reset training scene manifest and physical
+  difficulty labels.
 - `evaluation/steps.csv`: per-step rollout records.
 - `evaluation/exposures.csv`: matched exposure settings.
 - `analysis/episode_outcomes.csv`: lane-change onset outcomes.
@@ -133,6 +179,7 @@ Compare the trained policies on matched slow-front and no-front episodes:
 ```bash
 PYTHONPATH=src python experiments/multilane_open_lane_change/rollout_counterfactual.py \
   --run-dir outputs/multilane_open_lane_change_mixed_100k \
+  --eval-grid development \
   --variants original no-front \
   --num-exposures 36 \
   --evaluation-duration 120
@@ -153,6 +200,7 @@ After running all four variants, regenerate the report figures:
 ```bash
 PYTHONPATH=src python experiments/multilane_open_lane_change/rollout_counterfactual.py \
   --run-dir outputs/multilane_open_lane_change_mixed_100k \
+  --eval-grid development \
   --variants original no-front matched-speed-front far-front
 
 PYTHONPATH=src python experiments/multilane_open_lane_change/plot_report_figures.py \
@@ -163,6 +211,27 @@ The full-episode figure is written to
 `analysis/report_rollout_counterfactual_lane_change_response.{png,svg,pdf}`.
 An event-time version is also written to
 `analysis/report_rollout_counterfactual_cumulative_incidence.{png,svg,pdf}`.
+
+## Five-Seed R Figures
+
+After the development rollouts for seed 0 and stratified seeds 1-4 are
+available locally, generate the cross-seed training and physical-event
+counterfactual figures with:
+
+```bash
+R_LIBS_USER=tmp/r-lib Rscript \
+  experiments/multilane_open_lane_change/plot_multiseed_results.R
+```
+
+The script pools the lane-cost-0.2 seed-0 pilot with stratified seeds 1-4. It
+does not open the sealed held-out grid. Outputs are editable SVG/PDF, 600-dpi
+TIFF, 300-dpi PNG, and source-data CSV files under
+`outputs/multilane_open_lane_change_stratified_100k_multiseed/figures/`.
+The counterfactual figure uses physical lane-index changes in seconds,
+an all-episode occurrence heatmap, and conditional median/IQR timing among
+observed events. Its source-data bundle also retains empirical cumulative
+incidence, pooled and seed-level T50, and the matched-speed before-2-s
+development gate.
 
 ## Interpretation
 

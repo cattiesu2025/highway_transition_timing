@@ -98,6 +98,16 @@ def test_counterfactual_cli_defaults_to_full_36_exposure_grid():
     args = module.build_parser().parse_args(["--run-dir", "trained-run"])
 
     assert args.num_exposures == 36
+    assert args.eval_grid == "development"
+
+
+def test_counterfactual_cli_accepts_sealed_heldout_grid():
+    module = load_module()
+    args = module.build_parser().parse_args(
+        ["--run-dir", "trained-run", "--eval-grid", "heldout"]
+    )
+
+    assert args.eval_grid == "heldout"
 
 
 def test_report_summary_keeps_observed_and_censored_lane_changes_separate():

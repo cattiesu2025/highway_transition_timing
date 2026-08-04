@@ -171,6 +171,37 @@ def test_target_speed_grid_must_be_strictly_increasing():
         ExperimentConfig(target_speeds=(10.0, 20.0, 20.0))
 
 
+def test_reward_strength_multiplier_is_restricted_to_approved_levels():
+    assert ExperimentConfig(reward_strength_multiplier=1.0).reward_strength_multiplier == 1.0
+    assert ExperimentConfig(reward_strength_multiplier=2.0).reward_strength_multiplier == 2.0
+    assert ExperimentConfig(reward_strength_multiplier=4.0).reward_strength_multiplier == 4.0
+
+    with pytest.raises(ValueError, match="reward_strength_multiplier"):
+        ExperimentConfig(reward_strength_multiplier=3.0)
+
+
+def test_reward_strength_cli_and_effective_weights_follow_frozen_rules():
+    args = experiment.build_parser().parse_args(
+        ["--out", "validation", "--reward-strength-multiplier", "4"]
+    )
+    config = experiment.config_from_args(args)
+
+    fd = experiment.effective_reward_weights("FD", config)
+    bal = experiment.effective_reward_weights("BAL", config)
+    sp = experiment.effective_reward_weights("SP", config)
+
+    assert fd.speed_score == pytest.approx(0.45)
+    assert fd.front_distance_score == pytest.approx(4.0)
+    assert fd.collision_risk_penalty == pytest.approx(3.0)
+    assert sp.speed_score == pytest.approx(4.0)
+    assert sp.front_distance_score == pytest.approx(0.25)
+    assert sp.collision_risk_penalty == pytest.approx(3.0)
+    assert bal.speed_score == pytest.approx(2.8)
+    assert bal.front_distance_score == pytest.approx(2.8)
+    assert bal.collision_penalty == pytest.approx(8.0)
+    assert bal.collision_risk_penalty == pytest.approx(12.0)
+
+
 def test_stratified_training_block_has_exact_family_and_difficulty_counts():
     config = ExperimentConfig(seed=17)
     specs = [

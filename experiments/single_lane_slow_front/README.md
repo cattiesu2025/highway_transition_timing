@@ -62,7 +62,91 @@ PYTHONPATH=src python experiments/single_lane_slow_front/run.py \
   --bootstrap-samples 500
 ```
 
-After the local validation gate passes, submit five paired seeds on Katana.
+## 20-Second Training-Horizon Diagnostic
+
+This isolated diagnostic keeps the total training budget at 100,000 policy
+steps but shortens each fixed training episode from 120 s to 20 s. Evaluation
+remains 120 s. At 5 Hz this changes the nominal episode cap from 600 to 100
+policy steps, producing roughly 1,000 reset exposures per non-terminal agent
+run instead of roughly 167 full-duration exposures. Reward weights, the
+stratified block, Double DQN hyperparameters, target speeds, and the evaluation
+grid remain unchanged.
+
+After the local audit and smoke checks pass, submit the isolated 20-seed Katana
+array:
+
+```bash
+qsub scripts/katana_single_lane_duration20_20seed.pbs
+```
+
+The array uses seeds `0-19`. Each task audits 2,000 specifications, trains the
+1x FD/BAL/SP policies for 100,000 total steps with `--duration 20`, evaluates
+36 original slow-front scenes with `--evaluation-duration 120`, and verifies
+the three saved model archives. Outputs are written to:
+
+```text
+/srv/scratch/$USER/highway_transition_timing/outputs/
+  single_lane_slow_front_duration20_100k_seed<seed>/
+```
+
+Do not rename these directories to the historical `stratified_100k` names.
+Run no-front, matched-speed, and far-front counterfactuals only after the
+training-integrity and original development checks pass.
+
+## Reward-Strength Validation
+
+Use `--reward-strength-multiplier` only for the approved `{1,2,4}` validation.
+FD scales its front-distance term, SP scales its speed term, and BAL scales its
+complete effective reward as a numerical-scale negative control. The scenario
+block and all training/evaluation settings remain unchanged.
+
+Run the two new seed-0 pilot levels without overwriting the existing 1x run:
+
+```bash
+for MULTIPLIER in 2 4; do
+  PYTHONPATH=src python experiments/single_lane_slow_front/run.py \
+    --out "outputs/single_lane_slow_front_reward_strength_${MULTIPLIER}x_100k_pilot_seed0" \
+    --reward-strength-multiplier "${MULTIPLIER}" \
+    --timesteps 100000 \
+    --num-exposures 36 \
+    --duration 120 \
+    --evaluation-duration 120 \
+    --seed 0 \
+    --bootstrap-samples 500
+done
+```
+
+Pass the same multiplier to `counterfactual` and `rollout-counterfactual` when
+evaluating each new run so reward traces and metadata use its trained weights.
+
+Generate the seed-0 training, validation, and requested two-panel
+counterfactual figures with R:
+
+```bash
+R_LIBS_USER=tmp/r-lib Rscript \
+  experiments/single_lane_slow_front/plot_reward_strength_validation.R
+```
+
+The completed seed-0 pilot failed the predeclared directional and
+matched-speed opening gates: FD T50 was `1.0/1.2/0.0 s` at `1x/2x/4x`, and FD
+opened with `SLOWER` in `9/36` matched-speed scenes at both 2x and 4x. SP moved
+monotonically later (`1.0/1.4/2.4 s`) and every no-front cell remained `0/36`,
+but these partial passes did not authorize the five-seed expansion. Seed 0
+figure outputs and source-data CSVs are under
+`outputs/single_lane_slow_front_reward_strength_seed0/figures/`.
+
+The approved seed-1 diagnostic then repeated the FD specificity failure:
+matched-speed opening `SLOWER` counts were `9/36` at 2x and `15/36` at 4x.
+Although seed-1 FD T50 changed monotonically earlier (`1.4/0.0/0.0 s`), the
+4x SP policy had `0/36` valid original-scene onsets and `36/36` collision
+failures. The same 4x SP failure occurred for every matched-speed and far-front
+rollout, while no-front remained `0/36` onset with no failure. This confirms a
+design-level reward/safety-tradeoff problem rather than a seed-0-only anomaly.
+Do not train seeds 2--4 with this intervention; revise the reward-strength
+design and repeat audit, smoke, and paired seed-0/seed-1 pilots first.
+
+Only after a revised local validation gate passes should paired seeds be
+submitted on Katana.
 Install `requirements-pilot.txt` in the active Katana environment before
 submission; each array task then audits and trains one seed, while all three
 reward conditions in a seed share the same scenario schedule.

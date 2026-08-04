@@ -37,9 +37,11 @@ from highway_transition_timing.plotting import (
 )
 from highway_transition_timing.rewards import (
     MAIN_REWARD_WEIGHTS,
+    REWARD_STRENGTH_RULES,
     RewardWeights,
-    reward_config_table_with_slow_down_penalty,
+    reward_config_table_with_strength_multiplier,
     with_common_slow_down_penalty,
+    with_reward_strength_multiplier,
 )
 from highway_transition_timing.utils import json_dumps
 
@@ -58,6 +60,7 @@ COUNTERFACTUAL_VARIANTS = (
     "far-front",
 )
 TRAINING_SCENARIO_PROFILES = ("stratified", "legacy-random")
+REWARD_STRENGTH_MULTIPLIERS = (1.0, 2.0, 4.0)
 DEFAULT_TARGET_SPEEDS = (10.0, 15.0, 20.0, 25.0, 30.0, 35.0)
 TRAINING_SPEC_SEED_OFFSET = 1_000_000
 TRAINING_BLOCK_SEED_OFFSET = 2_000_000
@@ -128,6 +131,7 @@ class ExperimentConfig:
     no_front_train_fraction: float = 0.2
     near_matched_speed_train_fraction: float = 0.2
     near_matched_speed_delta: float = 2.0
+    reward_strength_multiplier: float = 1.0
 
     def __post_init__(self) -> None:
         if self.duration <= 0 or self.evaluation_duration <= 0:
@@ -169,6 +173,11 @@ class ExperimentConfig:
             )
         if self.near_matched_speed_delta < 0.25:
             raise ValueError("near_matched_speed_delta must be >= 0.25")
+        if self.reward_strength_multiplier not in REWARD_STRENGTH_MULTIPLIERS:
+            raise ValueError(
+                "reward_strength_multiplier must be one of "
+                f"{REWARD_STRENGTH_MULTIPLIERS}"
+            )
 
     @property
     def policy_step_seconds(self) -> float:
@@ -316,6 +325,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--learning-rate", type=float, default=5e-4)
     parser.add_argument("--collision-risk-penalty", type=float, default=3.0)
     parser.add_argument("--collision-penalty", type=float, default=None)
+    parser.add_argument(
+        "--reward-strength-multiplier",
+        type=float,
+        choices=list(REWARD_STRENGTH_MULTIPLIERS),
+        default=1.0,
+        help=(
+            "Approved validation levels only: FD scales front-distance, SP "
+            "scales speed, and BAL scales its complete effective reward."
+        ),
+    )
     parser.add_argument("--absolute-observation", action="store_true")
     parser.add_argument("--no-normalize-observation", action="store_true")
     parser.add_argument(
@@ -384,6 +403,12 @@ def build_counterfactual_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--collision-risk-penalty", type=float, default=3.0)
     parser.add_argument("--collision-penalty", type=float, default=None)
+    parser.add_argument(
+        "--reward-strength-multiplier",
+        type=float,
+        choices=list(REWARD_STRENGTH_MULTIPLIERS),
+        default=1.0,
+    )
     parser.add_argument("--absolute-observation", action="store_true")
     parser.add_argument("--no-normalize-observation", action="store_true")
     parser.add_argument(
@@ -424,6 +449,12 @@ def build_rollout_counterfactual_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-figures", action="store_true")
     parser.add_argument("--collision-risk-penalty", type=float, default=3.0)
     parser.add_argument("--collision-penalty", type=float, default=None)
+    parser.add_argument(
+        "--reward-strength-multiplier",
+        type=float,
+        choices=list(REWARD_STRENGTH_MULTIPLIERS),
+        default=1.0,
+    )
     parser.add_argument("--absolute-observation", action="store_true")
     parser.add_argument("--no-normalize-observation", action="store_true")
     parser.add_argument(
@@ -498,6 +529,30 @@ def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
             "near_matched_speed_delta",
             2.0,
         ),
+        reward_strength_multiplier=getattr(
+            args,
+            "reward_strength_multiplier",
+            1.0,
+        ),
+    )
+
+
+def effective_reward_weights(
+    agent_condition: str,
+    config: ExperimentConfig,
+) -> RewardWeights:
+    """Return common overrides plus the approved strength intervention."""
+
+    weights = with_common_slow_down_penalty(
+        MAIN_REWARD_WEIGHTS[agent_condition],
+        config.slow_down_penalty,
+        config.collision_risk_penalty,
+        config.collision_penalty,
+    )
+    return with_reward_strength_multiplier(
+        agent_condition,
+        weights,
+        config.reward_strength_multiplier,
     )
 
 
@@ -539,12 +594,7 @@ def make_env(agent_condition: str, config: ExperimentConfig, training: bool = Fa
     )
     if training:
         env = SingleLaneTrainingResetWrapper(env, config)
-    weights = with_common_slow_down_penalty(
-        MAIN_REWARD_WEIGHTS[agent_condition],
-        config.slow_down_penalty,
-        config.collision_risk_penalty,
-        config.collision_penalty,
-    )
+    weights = effective_reward_weights(agent_condition, config)
     return LongitudinalRewardWrapper(env, agent_condition, weights)
 
 
@@ -1089,6 +1139,7 @@ def train_agents(
     )
 
     for agent in agents:
+        effective_weights = effective_reward_weights(agent, config)
         training_env = make_env(agent, config, training=True)
         agent_logs_dir = logs_dir / agent
         agent_logs_dir.mkdir(parents=True, exist_ok=True)
@@ -1137,12 +1188,20 @@ def train_agents(
                 "total_timesteps": total_timesteps,
                 "seed": config.seed,
                 **{
-                    f"reward_{key}": value
+                    f"base_reward_{key}": value
                     for key, value in asdict(MAIN_REWARD_WEIGHTS[agent]).items()
                 },
-                "reward_slow_down_penalty": config.slow_down_penalty,
-                "reward_collision_risk_penalty": config.collision_risk_penalty,
-                "reward_common_collision_penalty": config.collision_penalty
+                **{
+                    f"reward_{key}": value
+                    for key, value in asdict(effective_weights).items()
+                },
+                "reward_strength_multiplier": config.reward_strength_multiplier,
+                "reward_strength_rule": REWARD_STRENGTH_RULES[agent],
+                "configured_common_slow_down_penalty": config.slow_down_penalty,
+                "configured_common_collision_risk_penalty": (
+                    config.collision_risk_penalty
+                ),
+                "configured_common_collision_penalty": config.collision_penalty
                 if config.collision_penalty is not None
                 else "",
                 "experiment": "single_lane_slow_front",
@@ -1816,9 +1875,10 @@ def write_analysis(
         exposures,
         AnalysisConfig(bootstrap_samples=bootstrap_samples),
         SLOWDOWN_ONSET_TARGET,
-        reward_config=reward_config_table_with_slow_down_penalty(
+        reward_config=reward_config_table_with_strength_multiplier(
             config.slow_down_penalty,
             config.collision_risk_penalty,
+            config.reward_strength_multiplier,
             config.collision_penalty,
         ),
     )

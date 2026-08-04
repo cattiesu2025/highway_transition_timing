@@ -58,6 +58,16 @@ Submit the validated five-seed array on Katana:
 qsub scripts/katana_single_lane_stratified.pbs
 ```
 
+Run the isolated 20-second-training/120-second-evaluation diagnostic over 20
+independent seeds with:
+
+```bash
+qsub scripts/katana_single_lane_duration20_20seed.pbs
+```
+
+This keeps 100,000 total training steps and all reward/scenario settings fixed,
+using separate `single_lane_slow_front_duration20_100k_seed<seed>` outputs.
+
 See `experiments/single_lane_slow_front/README.md` for reset strata,
 counterfactual commands, and output details.
 
@@ -67,11 +77,12 @@ Run the controlled lane-change experiment:
 
 ```bash
 PYTHONPATH=src python experiments/multilane_open_lane_change/run.py \
-  --out outputs/multilane_open_lane_change_mixed_100k \
+  --out outputs/multilane_open_lane_change_stratified_100k_seed0 \
   --timesteps 100000 \
   --num-exposures 36 \
   --duration 120 \
   --evaluation-duration 120 \
+  --training-scenario-profile stratified \
   --bootstrap-samples 500
 ```
 
@@ -82,13 +93,18 @@ qsub scripts/katana_multilane_open_lane_change.pbs
 ```
 
 Each array task trains FD, BAL, and SP for one seed and writes to
-`/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_mixed_100k_seed<seed>/`.
+`/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_stratified_100k_seed<seed>/`.
 
-Run the four matched full-rollout counterfactuals on those completed models:
+The existing multi-lane counterfactual PBS script targets the earlier
+`mixed_100k` diagnostic models. The new stratified models use the checksum-
+sealed disjoint held-out grid through:
 
 ```bash
-qsub scripts/katana_multilane_counterfactual_rollout.pbs
+qsub scripts/katana_multilane_heldout_rollout.pbs
 ```
+
+Submit that inference array only after all five new training runs pass their
+training-integrity and development checks.
 
 See `experiments/multilane_open_lane_change/README.md` for smoke tests,
 counterfactual rollouts, and report-figure generation.
@@ -100,7 +116,9 @@ experiments/
 ├── single_lane_slow_front/
 └── multilane_open_lane_change/
 scripts/
+├── katana_multilane_heldout_rollout.pbs
 ├── katana_multilane_open_lane_change.pbs
+├── katana_single_lane_duration20_20seed.pbs
 ├── katana_single_lane_stratified.pbs
 └── plot_training_diagnostics.py
 src/highway_transition_timing/

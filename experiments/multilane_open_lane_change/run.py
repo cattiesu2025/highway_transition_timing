@@ -1,15 +1,17 @@
 """Isolated open-lane multi-lane lane-change timing experiment.
 
-Training mixes slow-front episodes with no-front cruise episodes in a
-controlled multi-lane scene. Matched evaluation episodes contain the ego
-vehicle and one slower front vehicle, with empty adjacent lanes and no random
-traffic. The goal is to measure whether FD/BAL/SP policies produce different
-lane-change timing when lane change is available.
+Training uses a deterministic difficulty-stratified mixture in a controlled
+multi-lane scene. Matched evaluation episodes contain the ego vehicle and one
+slower front vehicle, with empty adjacent lanes and no random traffic. The goal
+is to measure whether FD/BAL/SP policies produce different lane-change timing
+when lane change is available.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
+import hashlib
 import json
 import random
 import sys
@@ -56,6 +58,48 @@ except ImportError:
 
 
 LANE_CHANGE_ACTIONS = {"LANE_LEFT", "LANE_RIGHT"}
+TRAINING_SCENARIO_PROFILES = ("stratified", "legacy-random")
+TRAINING_SPEC_SEED_OFFSET = 1_000_000
+TRAINING_BLOCK_SEED_OFFSET = 2_000_000
+NEAR_MATCHED_SPEED_MIN_ABS_DELTA = 0.25
+VEHICLE_LENGTH_METRES = 5.0
+OBSERVATION_DISTANCE_METRES = 200.0
+VISIBLE_TRAIN_DISTANCE_RANGE = (90.0, 195.0)
+BOUNDARY_VISIBLE_TRAIN_DISTANCE_RANGE = (180.0, 195.0)
+SLOW_FRONT_SPEED_RANGE = (10.0, 20.0)
+EGO_SPEED_RANGE = (24.0, 31.0)
+STRATIFIED_TRAINING_BLOCK = (
+    ("train_no_front", "", ""),
+    ("train_no_front", "", ""),
+    ("train_no_front", "", ""),
+    ("train_no_front", "", ""),
+    ("train_exact_matched_speed_front", "non_closing", "none"),
+    ("train_exact_matched_speed_front", "non_closing", "none"),
+    ("train_non_closing_front", "non_closing", "none"),
+    ("train_non_closing_front", "non_closing", "none"),
+    ("train_near_closing_front", "gradual", "gentle"),
+    ("train_near_closing_front", "gradual", "gentle"),
+    ("train_visible_slow_front", "gradual", "gentle"),
+    ("train_visible_slow_front", "gradual", "gentle"),
+    ("train_visible_slow_front", "easy", "gentle"),
+    ("train_visible_slow_front", "easy", "gentle"),
+    ("train_visible_slow_front", "medium", "moderate"),
+    ("train_visible_slow_front", "medium", "moderate"),
+    ("train_visible_slow_front", "hard", "strong"),
+    ("train_visible_slow_front", "hard", "strong"),
+    ("train_boundary_visible_front", "gradual", "gentle"),
+    ("train_boundary_visible_front", "gradual", "gentle"),
+)
+VISIBLE_DIFFICULTY_CELLS = {
+    ("gradual", "gentle"): ((20.001, 30.0), (0.10, 0.25)),
+    ("easy", "gentle"): ((12.001, 20.0), (0.20, 0.499)),
+    ("medium", "moderate"): ((8.001, 12.0), (0.50, 0.999)),
+    ("hard", "strong"): ((5.001, 8.0), (1.00, 1.999)),
+}
+SEALED_HELDOUT_GRID_PATH = Path(__file__).with_name("heldout_grid_v1.csv")
+SEALED_HELDOUT_GRID_SHA256 = (
+    "d861b169fb618b0053f972f128fa498d3249d48969209db99e342af7732e6964"
+)
 
 
 @dataclass(frozen=True)
@@ -70,6 +114,7 @@ class ExperimentConfig:
     observation_normalize: bool = True
     observation_absolute: bool = False
     slow_down_penalty: float = 0.2
+    lane_change_penalty: float = 0.2
     collision_risk_penalty: float = 3.0
     collision_penalty: float | None = None
     dqn_variant: str = "double-dqn"
@@ -85,7 +130,9 @@ class ExperimentConfig:
     exploration_initial_eps: float = 1.0
     exploration_fraction: float = 0.25
     exploration_final_eps: float = 0.05
+    training_scenario_profile: str = "stratified"
     no_front_train_fraction: float = 0.2
+    near_matched_speed_delta: float = 2.0
 
     def __post_init__(self) -> None:
         if self.duration <= 0 or self.evaluation_duration <= 0:
@@ -96,8 +143,20 @@ class ExperimentConfig:
             raise ValueError("lanes_count must be >= 2 for a multi-lane experiment")
         if not 0 <= self.ego_lane < self.lanes_count:
             raise ValueError("ego_lane must be a valid lane index")
+        if self.training_scenario_profile not in TRAINING_SCENARIO_PROFILES:
+            raise ValueError(
+                "training_scenario_profile must be one of "
+                f"{TRAINING_SCENARIO_PROFILES}"
+            )
         if not 0.0 <= self.no_front_train_fraction <= 1.0:
             raise ValueError("no_front_train_fraction must be in [0, 1]")
+        if self.near_matched_speed_delta < NEAR_MATCHED_SPEED_MIN_ABS_DELTA:
+            raise ValueError(
+                "near_matched_speed_delta must be >= "
+                f"{NEAR_MATCHED_SPEED_MIN_ABS_DELTA}"
+            )
+        if self.lane_change_penalty < 0.0:
+            raise ValueError("lane_change_penalty must be non-negative")
 
     @property
     def policy_step_seconds(self) -> float:
@@ -120,6 +179,33 @@ class OpenLaneSpec:
     exposure_t: int = 0
     scenario_type: str = "open_lane_slow_front"
     include_front_vehicle: bool = True
+    ttc_bin: str = ""
+    required_deceleration_bin: str = ""
+    visible_at_t0: bool = True
+
+    @property
+    def net_distance(self) -> float:
+        if not self.include_front_vehicle:
+            return float("inf")
+        return max(self.front_distance - VEHICLE_LENGTH_METRES, 0.0)
+
+    @property
+    def closing_speed(self) -> float:
+        if not self.include_front_vehicle:
+            return 0.0
+        return self.ego_speed - self.front_speed
+
+    @property
+    def ttc_seconds(self) -> float:
+        if self.closing_speed <= 0.0 or self.net_distance <= 0.0:
+            return float("inf")
+        return self.net_distance / self.closing_speed
+
+    @property
+    def required_deceleration(self) -> float:
+        if self.closing_speed <= 0.0 or self.net_distance <= 0.0:
+            return 0.0
+        return self.closing_speed**2 / (2.0 * self.net_distance)
 
 
 class OpenLaneTrainingResetWrapper(_GymWrapper):
@@ -134,16 +220,19 @@ class OpenLaneTrainingResetWrapper(_GymWrapper):
         self.reset_count = 0
         self.last_training_exposure: OpenLaneSpec | None = None
         self.training_variant_counts: Counter[str] = Counter()
+        self.training_spec_rows: list[dict[str, Any]] = []
 
     def __getattr__(self, name: str):
         return getattr(self.env, name)
 
     def reset(self, **kwargs):
         obs, info = self.env.reset(**kwargs)
-        spec = make_training_spec(self.reset_count, self.config)
+        reset_index = self.reset_count
+        spec = make_training_spec(reset_index, self.config)
         self.reset_count += 1
         self.last_training_exposure = spec
         self.training_variant_counts[spec.scenario_type] += 1
+        self.training_spec_rows.append(training_spec_row(reset_index, spec, self.config))
         obs = apply_open_lane_scene(
             self.env,
             spec,
@@ -221,17 +310,54 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--collision-risk-penalty", type=float, default=3.0)
     parser.add_argument("--collision-penalty", type=float, default=None)
     parser.add_argument("--slow-down-penalty", type=float, default=0.2)
+    parser.add_argument("--lane-change-penalty", type=float, default=0.2)
     parser.add_argument("--absolute-observation", action="store_true")
     parser.add_argument("--no-normalize-observation", action="store_true")
+    parser.add_argument(
+        "--training-scenario-profile",
+        choices=list(TRAINING_SCENARIO_PROFILES),
+        default="stratified",
+        help=(
+            "Use the deterministic TTC/deceleration block by default; "
+            "legacy-random reproduces the previous probabilistic mixture."
+        ),
+    )
     parser.add_argument(
         "--no-front-train-fraction",
         type=float,
         default=0.2,
         help=(
-            "Fraction of training resets with no front vehicle. "
-            "Use 0.0 to reproduce the original always-front baseline."
+            "Legacy-random fraction of training resets with no front vehicle. "
+            "This option does not alter the fixed stratified block."
         ),
     )
+    parser.add_argument(
+        "--near-matched-speed-delta",
+        type=float,
+        default=2.0,
+        help="Maximum absolute speed difference for near-matched training scenes.",
+    )
+    return parser
+
+
+def build_audit_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Audit multi-lane stratified training scenes without training."
+    )
+    parser.add_argument("--out", required=True)
+    parser.add_argument("--num-resets", type=int, default=2_000)
+    parser.add_argument("--duration", type=int, default=120)
+    parser.add_argument("--evaluation-duration", type=int, default=120)
+    parser.add_argument("--seed", type=int, default=0)
+    parser.add_argument("--lanes-count", type=int, default=4)
+    parser.add_argument("--ego-lane", type=int, default=1)
+    parser.add_argument(
+        "--training-scenario-profile",
+        choices=list(TRAINING_SCENARIO_PROFILES),
+        default="stratified",
+    )
+    parser.add_argument("--no-front-train-fraction", type=float, default=0.2)
+    parser.add_argument("--near-matched-speed-delta", type=float, default=2.0)
     return parser
 
 
@@ -245,10 +371,13 @@ def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
         observation_normalize=not args.no_normalize_observation,
         observation_absolute=args.absolute_observation,
         slow_down_penalty=args.slow_down_penalty,
+        lane_change_penalty=args.lane_change_penalty,
         collision_risk_penalty=args.collision_risk_penalty,
         collision_penalty=args.collision_penalty,
         learning_rate=args.learning_rate,
+        training_scenario_profile=args.training_scenario_profile,
         no_front_train_fraction=args.no_front_train_fraction,
+        near_matched_speed_delta=args.near_matched_speed_delta,
     )
 
 
@@ -287,6 +416,10 @@ def make_env(agent_condition: str, config: ExperimentConfig, training: bool = Fa
             "offroad_terminal": True,
         }
     )
+    # highway-env refreshes its observation space on reset after configure().
+    # Do this before adding the training wrapper so the initialization scene is
+    # not recorded as a scene consumed by model.learn().
+    env.reset(seed=config.seed)
     if training:
         env = OpenLaneTrainingResetWrapper(env, config)
     weights = with_common_slow_down_penalty(
@@ -294,25 +427,476 @@ def make_env(agent_condition: str, config: ExperimentConfig, training: bool = Fa
         config.slow_down_penalty,
         config.collision_risk_penalty,
         config.collision_penalty,
+        config.lane_change_penalty,
     )
     return OpenLaneRewardWrapper(env, agent_condition, weights)
 
 
+def classify_ttc(ttc_seconds: float, closing_speed: float) -> str:
+    if closing_speed <= 0.0:
+        return "non_closing"
+    if ttc_seconds > 20.0:
+        return "gradual"
+    if ttc_seconds > 12.0:
+        return "easy"
+    if ttc_seconds > 8.0:
+        return "medium"
+    if ttc_seconds > 5.0:
+        return "hard"
+    return "critical"
+
+
+def classify_required_deceleration(required_deceleration: float) -> str:
+    if required_deceleration <= 0.0:
+        return "none"
+    if required_deceleration < 0.5:
+        return "gentle"
+    if required_deceleration < 1.0:
+        return "moderate"
+    if required_deceleration < 2.0:
+        return "strong"
+    if required_deceleration < 3.0:
+        return "very_strong"
+    return "extreme"
+
+
+def build_open_lane_spec(
+    *,
+    exposure_id: str,
+    exposure_seed: int,
+    ego_speed: float,
+    front_distance: float,
+    front_speed: float,
+    scenario_type: str,
+    include_front_vehicle: bool,
+    ego_lane: int,
+    ego_longitudinal: float = 100.0,
+    exposure_t: int = 0,
+) -> OpenLaneSpec:
+    rounded_ego_speed = round(float(ego_speed), 3)
+    rounded_front_distance = round(float(front_distance), 3)
+    rounded_front_speed = round(float(front_speed), 3)
+    net_distance = (
+        max(rounded_front_distance - VEHICLE_LENGTH_METRES, 0.0)
+        if include_front_vehicle
+        else float("inf")
+    )
+    closing_speed = (
+        rounded_ego_speed - rounded_front_speed if include_front_vehicle else 0.0
+    )
+    ttc_seconds = (
+        net_distance / closing_speed
+        if closing_speed > 0.0 and net_distance > 0.0
+        else float("inf")
+    )
+    required_deceleration = (
+        closing_speed**2 / (2.0 * net_distance)
+        if closing_speed > 0.0 and net_distance > 0.0
+        else 0.0
+    )
+    return OpenLaneSpec(
+        exposure_id=exposure_id,
+        exposure_seed=exposure_seed,
+        ego_speed=rounded_ego_speed,
+        front_distance=rounded_front_distance,
+        front_speed=rounded_front_speed,
+        ego_lane=ego_lane,
+        ego_longitudinal=ego_longitudinal,
+        exposure_t=exposure_t,
+        scenario_type=scenario_type,
+        include_front_vehicle=include_front_vehicle,
+        ttc_bin=(
+            classify_ttc(ttc_seconds, closing_speed)
+            if include_front_vehicle
+            else "not_applicable"
+        ),
+        required_deceleration_bin=(
+            classify_required_deceleration(required_deceleration)
+            if include_front_vehicle
+            else "not_applicable"
+        ),
+        visible_at_t0=(
+            include_front_vehicle
+            and rounded_front_distance < OBSERVATION_DISTANCE_METRES
+        ),
+    )
+
+
 def make_training_spec(reset_index: int, config: ExperimentConfig) -> OpenLaneSpec:
+    if config.training_scenario_profile == "legacy-random":
+        return make_legacy_random_training_spec(reset_index, config)
+    return make_stratified_training_spec(reset_index, config)
+
+
+def make_stratified_training_spec(
+    reset_index: int,
+    config: ExperimentConfig,
+) -> OpenLaneSpec:
+    training_seed = config.seed + TRAINING_SPEC_SEED_OFFSET + reset_index
+    rng = random.Random(training_seed)
+    scenario_type, expected_ttc_bin, expected_deceleration_bin = (
+        stratified_training_slot(reset_index, config.seed)
+    )
+
+    if scenario_type == "train_no_front":
+        ego_speed = rng.uniform(*EGO_SPEED_RANGE)
+        return build_open_lane_spec(
+            exposure_id=f"train_reset_{reset_index:06d}",
+            exposure_seed=training_seed,
+            ego_speed=ego_speed,
+            front_distance=0.0,
+            front_speed=ego_speed,
+            scenario_type=scenario_type,
+            include_front_vehicle=False,
+            ego_lane=config.ego_lane,
+        )
+
+    if scenario_type == "train_exact_matched_speed_front":
+        ego_speed = rng.uniform(*EGO_SPEED_RANGE)
+        return build_open_lane_spec(
+            exposure_id=f"train_reset_{reset_index:06d}",
+            exposure_seed=training_seed,
+            ego_speed=ego_speed,
+            front_distance=rng.uniform(*VISIBLE_TRAIN_DISTANCE_RANGE),
+            front_speed=ego_speed,
+            scenario_type=scenario_type,
+            include_front_vehicle=True,
+            ego_lane=config.ego_lane,
+        )
+
+    if scenario_type == "train_non_closing_front":
+        ego_speed = rng.uniform(*EGO_SPEED_RANGE)
+        front_speed = ego_speed + rng.uniform(
+            NEAR_MATCHED_SPEED_MIN_ABS_DELTA,
+            config.near_matched_speed_delta,
+        )
+        return build_open_lane_spec(
+            exposure_id=f"train_reset_{reset_index:06d}",
+            exposure_seed=training_seed,
+            ego_speed=ego_speed,
+            front_distance=rng.uniform(*VISIBLE_TRAIN_DISTANCE_RANGE),
+            front_speed=front_speed,
+            scenario_type=scenario_type,
+            include_front_vehicle=True,
+            ego_lane=config.ego_lane,
+        )
+
+    if scenario_type == "train_near_closing_front":
+        ego_speed = rng.uniform(*EGO_SPEED_RANGE)
+        front_speed = ego_speed - rng.uniform(
+            NEAR_MATCHED_SPEED_MIN_ABS_DELTA,
+            config.near_matched_speed_delta,
+        )
+        return build_open_lane_spec(
+            exposure_id=f"train_reset_{reset_index:06d}",
+            exposure_seed=training_seed,
+            ego_speed=ego_speed,
+            front_distance=rng.uniform(*VISIBLE_TRAIN_DISTANCE_RANGE),
+            front_speed=front_speed,
+            scenario_type=scenario_type,
+            include_front_vehicle=True,
+            ego_lane=config.ego_lane,
+        )
+
+    if scenario_type == "train_boundary_visible_front":
+        return sample_boundary_visible_training_spec(
+            reset_index,
+            training_seed,
+            rng,
+            config,
+        )
+
+    return sample_visible_slow_front_training_spec(
+        reset_index=reset_index,
+        training_seed=training_seed,
+        rng=rng,
+        expected_ttc_bin=expected_ttc_bin,
+        expected_deceleration_bin=expected_deceleration_bin,
+        config=config,
+    )
+
+
+def stratified_training_slot(
+    reset_index: int,
+    seed: int,
+) -> tuple[str, str, str]:
+    block_index, block_position = divmod(
+        reset_index,
+        len(STRATIFIED_TRAINING_BLOCK),
+    )
+    block = list(STRATIFIED_TRAINING_BLOCK)
+    block_rng = random.Random(seed + TRAINING_BLOCK_SEED_OFFSET + block_index)
+    block_rng.shuffle(block)
+    return block[block_position]
+
+
+def sample_visible_slow_front_training_spec(
+    *,
+    reset_index: int,
+    training_seed: int,
+    rng: random.Random,
+    expected_ttc_bin: str,
+    expected_deceleration_bin: str,
+    config: ExperimentConfig,
+) -> OpenLaneSpec:
+    ttc_range, deceleration_range = VISIBLE_DIFFICULTY_CELLS[
+        (expected_ttc_bin, expected_deceleration_bin)
+    ]
+    for _attempt in range(10_000):
+        ttc_seconds = rng.uniform(*ttc_range)
+        required_deceleration = rng.uniform(*deceleration_range)
+        closing_speed = 2.0 * required_deceleration * ttc_seconds
+        net_distance = closing_speed * ttc_seconds
+        front_distance = net_distance + VEHICLE_LENGTH_METRES
+        ego_speed = rng.uniform(*EGO_SPEED_RANGE)
+        front_speed = ego_speed - closing_speed
+        if not (
+            VISIBLE_TRAIN_DISTANCE_RANGE[0]
+            <= front_distance
+            <= VISIBLE_TRAIN_DISTANCE_RANGE[1]
+        ):
+            continue
+        if not SLOW_FRONT_SPEED_RANGE[0] <= front_speed <= SLOW_FRONT_SPEED_RANGE[1]:
+            continue
+        spec = build_open_lane_spec(
+            exposure_id=f"train_reset_{reset_index:06d}",
+            exposure_seed=training_seed,
+            ego_speed=ego_speed,
+            front_distance=front_distance,
+            front_speed=front_speed,
+            scenario_type="train_visible_slow_front",
+            include_front_vehicle=True,
+            ego_lane=config.ego_lane,
+        )
+        if (
+            spec.ttc_bin == expected_ttc_bin
+            and spec.required_deceleration_bin == expected_deceleration_bin
+        ):
+            return spec
+    raise RuntimeError(
+        "Unable to sample feasible visible slow-front scene for "
+        f"{expected_ttc_bin}/{expected_deceleration_bin}"
+    )
+
+
+def sample_boundary_visible_training_spec(
+    reset_index: int,
+    training_seed: int,
+    rng: random.Random,
+    config: ExperimentConfig,
+) -> OpenLaneSpec:
+    for _attempt in range(10_000):
+        front_distance = rng.uniform(*BOUNDARY_VISIBLE_TRAIN_DISTANCE_RANGE)
+        net_distance = front_distance - VEHICLE_LENGTH_METRES
+        ttc_seconds = rng.uniform(20.001, 35.0)
+        closing_speed = net_distance / ttc_seconds
+        ego_speed = rng.uniform(*EGO_SPEED_RANGE)
+        front_speed = ego_speed - closing_speed
+        if not SLOW_FRONT_SPEED_RANGE[0] <= front_speed <= SLOW_FRONT_SPEED_RANGE[1]:
+            continue
+        spec = build_open_lane_spec(
+            exposure_id=f"train_reset_{reset_index:06d}",
+            exposure_seed=training_seed,
+            ego_speed=ego_speed,
+            front_distance=front_distance,
+            front_speed=front_speed,
+            scenario_type="train_boundary_visible_front",
+            include_front_vehicle=True,
+            ego_lane=config.ego_lane,
+        )
+        if spec.ttc_bin == "gradual" and spec.required_deceleration_bin == "gentle":
+            return spec
+    raise RuntimeError("Unable to sample feasible boundary-visible slow-front scene")
+
+
+def make_legacy_random_training_spec(
+    reset_index: int,
+    config: ExperimentConfig,
+) -> OpenLaneSpec:
     rng = random.Random(config.seed + 1009 * reset_index)
     include_front_vehicle = rng.random() >= config.no_front_train_fraction
-    return OpenLaneSpec(
+    return build_open_lane_spec(
         exposure_id=f"train_reset_{reset_index:06d}",
         exposure_seed=config.seed + reset_index,
         ego_lane=config.ego_lane,
-        ego_speed=round(rng.uniform(24.0, 31.0), 3),
-        front_distance=round(rng.uniform(120.0, 280.0), 3),
-        front_speed=round(rng.uniform(10.0, 20.0), 3),
-        scenario_type="train_slow_front"
-        if include_front_vehicle
-        else "train_no_front",
+        ego_speed=rng.uniform(24.0, 31.0),
+        front_distance=rng.uniform(120.0, 280.0),
+        front_speed=rng.uniform(10.0, 20.0),
+        scenario_type=(
+            "train_slow_front" if include_front_vehicle else "train_no_front"
+        ),
         include_front_vehicle=include_front_vehicle,
     )
+
+
+def training_spec_row(
+    reset_index: int,
+    spec: OpenLaneSpec,
+    config: ExperimentConfig,
+) -> dict[str, Any]:
+    block_index, block_position = divmod(
+        reset_index,
+        len(STRATIFIED_TRAINING_BLOCK),
+    )
+    return {
+        "reset_index": reset_index,
+        "block_index": (
+            block_index if config.training_scenario_profile == "stratified" else ""
+        ),
+        "block_position": (
+            block_position if config.training_scenario_profile == "stratified" else ""
+        ),
+        "block_size": (
+            len(STRATIFIED_TRAINING_BLOCK)
+            if config.training_scenario_profile == "stratified"
+            else ""
+        ),
+        "exposure_id": spec.exposure_id,
+        "scene_seed": spec.exposure_seed,
+        "training_scenario_profile": config.training_scenario_profile,
+        "scenario_type": spec.scenario_type,
+        "include_front_vehicle": spec.include_front_vehicle,
+        "ego_lane": spec.ego_lane,
+        "ego_speed": spec.ego_speed,
+        "front_center_distance": (
+            spec.front_distance if spec.include_front_vehicle else ""
+        ),
+        "front_net_distance": finite_or_blank(spec.net_distance),
+        "front_speed": spec.front_speed if spec.include_front_vehicle else "",
+        "closing_speed": round(spec.closing_speed, 6),
+        "ttc_seconds": finite_or_blank(spec.ttc_seconds),
+        "required_deceleration_mps2": round(spec.required_deceleration, 6),
+        "ttc_bin": spec.ttc_bin,
+        "required_deceleration_bin": spec.required_deceleration_bin,
+        "difficulty_bin": f"{spec.ttc_bin}__{spec.required_deceleration_bin}",
+        "visible_at_t0": spec.visible_at_t0,
+        "adjacent_lanes_open": True,
+        "background_vehicles": 0,
+        "policy_frequency_hz": config.policy_frequency,
+        "policy_step_seconds": round(config.policy_step_seconds, 6),
+    }
+
+
+def audit_training_scenarios(
+    output_dir: Path,
+    num_resets: int,
+    config: ExperimentConfig,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if num_resets < len(STRATIFIED_TRAINING_BLOCK):
+        raise ValueError(
+            "num_resets must cover at least one complete stratified block "
+            f"({len(STRATIFIED_TRAINING_BLOCK)})"
+        )
+    if (
+        config.training_scenario_profile == "stratified"
+        and num_resets % len(STRATIFIED_TRAINING_BLOCK) != 0
+    ):
+        raise ValueError(
+            "num_resets must be a multiple of the stratified block size "
+            f"({len(STRATIFIED_TRAINING_BLOCK)})"
+        )
+    specs = [make_training_spec(index, config) for index in range(num_resets)]
+    if config.training_scenario_profile == "stratified":
+        validate_stratified_training_specs(specs)
+    rows = [
+        training_spec_row(index, spec, config)
+        for index, spec in enumerate(specs)
+    ]
+    family_counts = Counter(spec.scenario_type for spec in specs)
+    difficulty_counts = Counter(
+        (
+            spec.scenario_type,
+            spec.ttc_bin,
+            spec.required_deceleration_bin,
+        )
+        for spec in specs
+    )
+    summary_rows: list[dict[str, Any]] = []
+    for family, count in sorted(family_counts.items()):
+        summary_rows.append(
+            {
+                "record_type": "family",
+                "scenario_type": family,
+                "ttc_bin": "",
+                "required_deceleration_bin": "",
+                "n": count,
+                "fraction": round(count / num_resets, 6),
+            }
+        )
+    for (family, ttc_bin, deceleration_bin), count in sorted(
+        difficulty_counts.items()
+    ):
+        summary_rows.append(
+            {
+                "record_type": "difficulty",
+                "scenario_type": family,
+                "ttc_bin": ttc_bin,
+                "required_deceleration_bin": deceleration_bin,
+                "n": count,
+                "fraction": round(count / num_resets, 6),
+            }
+        )
+    output_dir.mkdir(parents=True, exist_ok=True)
+    write_csv_rows(output_dir / "training_scenario_audit.csv", rows)
+    write_csv_rows(output_dir / "training_scenario_audit_summary.csv", summary_rows)
+    return rows, summary_rows
+
+
+def validate_stratified_training_specs(
+    specs: Sequence[OpenLaneSpec],
+) -> None:
+    block_size = len(STRATIFIED_TRAINING_BLOCK)
+    expected_family_counts = Counter(
+        scenario_type
+        for scenario_type, _ttc_bin, _deceleration_bin in STRATIFIED_TRAINING_BLOCK
+    )
+    expected_visible_difficulty_counts = Counter(
+        (ttc_bin, deceleration_bin)
+        for scenario_type, ttc_bin, deceleration_bin in STRATIFIED_TRAINING_BLOCK
+        if scenario_type == "train_visible_slow_front"
+    )
+    for block_index, start in enumerate(range(0, len(specs), block_size)):
+        block = specs[start : start + block_size]
+        family_counts = Counter(spec.scenario_type for spec in block)
+        if family_counts != expected_family_counts:
+            raise RuntimeError(
+                f"Stratified family quota mismatch in block {block_index}: "
+                f"{dict(sorted(family_counts.items()))}"
+            )
+        visible_difficulty_counts = Counter(
+            (spec.ttc_bin, spec.required_deceleration_bin)
+            for spec in block
+            if spec.scenario_type == "train_visible_slow_front"
+        )
+        if visible_difficulty_counts != expected_visible_difficulty_counts:
+            raise RuntimeError(
+                f"Visible difficulty quota mismatch in block {block_index}: "
+                f"{dict(sorted(visible_difficulty_counts.items()))}"
+            )
+
+    for spec in specs:
+        if spec.scenario_type == "train_no_front":
+            if spec.include_front_vehicle or spec.visible_at_t0:
+                raise RuntimeError(f"Invalid no-front scene: {spec.exposure_id}")
+            continue
+        if not spec.include_front_vehicle:
+            raise RuntimeError(f"Missing front vehicle: {spec.exposure_id}")
+        if spec.ttc_bin != classify_ttc(spec.ttc_seconds, spec.closing_speed):
+            raise RuntimeError(f"TTC label mismatch: {spec.exposure_id}")
+        if spec.required_deceleration_bin != classify_required_deceleration(
+            spec.required_deceleration
+        ):
+            raise RuntimeError(
+                f"Required-deceleration label mismatch: {spec.exposure_id}"
+            )
+        if spec.ttc_bin == "critical":
+            raise RuntimeError(
+                f"Critical TTC leaked into routine training: {spec.exposure_id}"
+            )
+        if not spec.visible_at_t0:
+            raise RuntimeError(
+                f"Visible/control scene is hidden at t0: {spec.exposure_id}"
+            )
 
 
 def make_eval_specs(num_exposures: int, config: ExperimentConfig) -> list[OpenLaneSpec]:
@@ -322,7 +906,7 @@ def make_eval_specs(num_exposures: int, config: ExperimentConfig) -> list[OpenLa
     specs: list[OpenLaneSpec] = []
     for idx in range(num_exposures):
         specs.append(
-            OpenLaneSpec(
+            build_open_lane_spec(
                 exposure_id=f"M{idx:04d}",
                 exposure_seed=config.seed + idx,
                 ego_lane=config.ego_lane,
@@ -332,8 +916,118 @@ def make_eval_specs(num_exposures: int, config: ExperimentConfig) -> list[OpenLa
                 ],
                 front_distance=front_distances[idx % len(front_distances)],
                 front_speed=front_speeds[(idx // len(front_distances)) % len(front_speeds)],
+                scenario_type="open_lane_slow_front",
+                include_front_vehicle=True,
             )
         )
+    return specs
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_eval_specs(
+    path: Path,
+    config: ExperimentConfig,
+    expected_sha256: str | None = None,
+) -> list[OpenLaneSpec]:
+    """Load a fixed evaluation grid and validate its physical scene fields."""
+
+    if not path.exists():
+        raise FileNotFoundError(f"Evaluation grid does not exist: {path}")
+    actual_sha256 = file_sha256(path)
+    if expected_sha256 is not None and actual_sha256 != expected_sha256:
+        raise RuntimeError(
+            "Evaluation grid checksum mismatch: "
+            f"expected {expected_sha256}, got {actual_sha256}"
+        )
+
+    required = {
+        "exposure_id",
+        "exposure_seed",
+        "ego_speed",
+        "front_distance",
+        "front_speed",
+        "ego_lane",
+    }
+    with path.open(newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = required.difference(reader.fieldnames or [])
+        if missing:
+            raise ValueError(
+                f"Evaluation grid is missing columns: {sorted(missing)}"
+            )
+        rows = list(reader)
+    if not rows:
+        raise ValueError("Evaluation grid must contain at least one exposure")
+
+    specs: list[OpenLaneSpec] = []
+    for row in rows:
+        spec = build_open_lane_spec(
+            exposure_id=str(row["exposure_id"]),
+            exposure_seed=int(row["exposure_seed"]),
+            ego_lane=int(row["ego_lane"]),
+            ego_speed=float(row["ego_speed"]),
+            front_distance=float(row["front_distance"]),
+            front_speed=float(row["front_speed"]),
+            scenario_type="heldout_open_lane_slow_front",
+            include_front_vehicle=True,
+        )
+        if spec.ego_lane != config.ego_lane:
+            raise ValueError(
+                f"Held-out ego lane {spec.ego_lane} does not match configured "
+                f"ego lane {config.ego_lane}: {spec.exposure_id}"
+            )
+        if spec.front_distance <= VEHICLE_LENGTH_METRES:
+            raise ValueError(f"Non-positive held-out net gap: {spec.exposure_id}")
+        if spec.front_speed <= 0.0 or spec.ego_speed <= spec.front_speed:
+            raise ValueError(
+                f"Held-out original must be a closing slow-front scene: "
+                f"{spec.exposure_id}"
+            )
+        specs.append(spec)
+
+    exposure_ids = [spec.exposure_id for spec in specs]
+    exposure_seeds = [spec.exposure_seed for spec in specs]
+    physical_rows = [
+        (spec.ego_speed, spec.front_distance, spec.front_speed, spec.ego_lane)
+        for spec in specs
+    ]
+    if len(set(exposure_ids)) != len(exposure_ids):
+        raise ValueError("Evaluation grid exposure_id values must be unique")
+    if len(set(exposure_seeds)) != len(exposure_seeds):
+        raise ValueError("Evaluation grid exposure_seed values must be unique")
+    if len(set(physical_rows)) != len(physical_rows):
+        raise ValueError("Evaluation grid physical scene rows must be unique")
+    return specs
+
+
+def make_sealed_heldout_specs(config: ExperimentConfig) -> list[OpenLaneSpec]:
+    """Load the versioned final grid and enforce its precommitted checksum."""
+
+    specs = load_eval_specs(
+        SEALED_HELDOUT_GRID_PATH,
+        config,
+        expected_sha256=SEALED_HELDOUT_GRID_SHA256,
+    )
+    if len(specs) != 36:
+        raise RuntimeError(f"Sealed held-out grid must have 36 rows, got {len(specs)}")
+
+    development = make_eval_specs(36, config)
+    for field in ("ego_speed", "front_distance", "front_speed"):
+        development_values = {getattr(spec, field) for spec in development}
+        heldout_values = {getattr(spec, field) for spec in specs}
+        overlap = development_values.intersection(heldout_values)
+        if overlap:
+            raise RuntimeError(
+                f"Sealed held-out {field} values overlap development: "
+                f"{sorted(overlap)}"
+            )
     return specs
 
 
@@ -403,13 +1097,24 @@ def train_agents(
     models_dir.mkdir(parents=True, exist_ok=True)
     logs_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
+    scenario_rows: list[dict[str, Any]] = []
+    block_family_counts = Counter(
+        scenario_type
+        for scenario_type, _ttc_bin, _deceleration_bin in STRATIFIED_TRAINING_BLOCK
+    )
 
     for agent in agents:
+        effective_reward_weights = with_common_slow_down_penalty(
+            MAIN_REWARD_WEIGHTS[agent],
+            config.slow_down_penalty,
+            config.collision_risk_penalty,
+            config.collision_penalty,
+            config.lane_change_penalty,
+        )
         training_env = make_env(agent, config, training=True)
         agent_logs_dir = logs_dir / agent
         agent_logs_dir.mkdir(parents=True, exist_ok=True)
         env = Monitor(training_env, filename=str(agent_logs_dir / "monitor.csv"))
-        env.reset(seed=config.seed)
         model = dqn_class(
             "MlpPolicy",
             env,
@@ -432,10 +1137,17 @@ def train_agents(
         model.learn(total_timesteps=total_timesteps, progress_bar=False)
         model_path = models_dir / f"{agent}_main.zip"
         model.save(model_path)
-        env.close()
         training_counts = dict(
             sorted(getattr(training_env, "training_variant_counts", Counter()).items())
         )
+        agent_scenario_rows = list(
+            getattr(training_env, "training_spec_rows", [])
+        )
+        scenario_rows.extend(
+            {"agent_condition": agent, **row}
+            for row in agent_scenario_rows
+        )
+        env.close()
         rows.append(
             {
                 "agent_condition": agent,
@@ -447,7 +1159,7 @@ def train_agents(
                 "seed": config.seed,
                 **{
                     f"reward_{key}": value
-                    for key, value in asdict(MAIN_REWARD_WEIGHTS[agent]).items()
+                    for key, value in asdict(effective_reward_weights).items()
                 },
                 "reward_slow_down_penalty": config.slow_down_penalty,
                 "reward_collision_risk_penalty": config.collision_risk_penalty,
@@ -460,8 +1172,20 @@ def train_agents(
                 "policy_frequency_hz": config.policy_frequency,
                 "policy_step_seconds": round(config.policy_step_seconds, 6),
                 "evaluation_max_policy_steps": config.evaluation_max_policy_steps,
+                "training_scenario_profile": config.training_scenario_profile,
+                "training_scenario_block_size": len(STRATIFIED_TRAINING_BLOCK),
+                "training_scenario_block_family_counts": json_dumps(
+                    dict(sorted(block_family_counts.items()))
+                ),
                 "training_no_front_fraction": config.no_front_train_fraction,
+                "training_near_matched_speed_min_abs_delta": (
+                    NEAR_MATCHED_SPEED_MIN_ABS_DELTA
+                ),
+                "training_near_matched_speed_max_abs_delta": (
+                    config.near_matched_speed_delta
+                ),
                 "training_scene_counts": json_dumps(training_counts),
+                "training_reset_count": len(agent_scenario_rows),
                 "action_space": "LANE_LEFT,IDLE,LANE_RIGHT,FASTER,SLOWER",
                 "blockers": "none",
                 "background_vehicles": 0,
@@ -471,6 +1195,7 @@ def train_agents(
             }
         )
     write_csv_rows(output_dir / "training_runs.csv", rows)
+    write_csv_rows(output_dir / "training_scenarios.csv", scenario_rows)
 
 
 def evaluate_agents(
@@ -663,6 +1388,7 @@ def write_analysis(
             config.slow_down_penalty,
             config.collision_risk_penalty,
             config.collision_penalty,
+            config.lane_change_penalty,
         ),
     )
     analysis_dir = output_dir / "analysis"
@@ -889,7 +1615,32 @@ def print_summary(result: PipelineResult, output_dir: Path) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     configure_headless_runtime()
-    args = build_parser().parse_args(sys.argv[1:] if argv is None else argv)
+    raw_args = list(sys.argv[1:] if argv is None else argv)
+    if raw_args and raw_args[0] == "audit":
+        args = build_audit_parser().parse_args(raw_args[1:])
+        config = ExperimentConfig(
+            duration=args.duration,
+            evaluation_duration=args.evaluation_duration,
+            seed=args.seed,
+            lanes_count=args.lanes_count,
+            ego_lane=args.ego_lane,
+            training_scenario_profile=args.training_scenario_profile,
+            no_front_train_fraction=args.no_front_train_fraction,
+            near_matched_speed_delta=args.near_matched_speed_delta,
+        )
+        output_dir = Path(args.out)
+        rows, summary_rows = audit_training_scenarios(
+            output_dir,
+            args.num_resets,
+            config,
+        )
+        print(
+            f"Wrote multi-lane training scenario audit to {output_dir} "
+            f"(resets={len(rows)}, summary_rows={len(summary_rows)})"
+        )
+        return 0
+
+    args = build_parser().parse_args(raw_args)
     config = config_from_args(args)
     output_dir = Path(args.out)
     train_agents(output_dir, args.agents, args.timesteps, config, args.verbose)

@@ -39,6 +39,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--num-exposures", type=int, default=36)
     parser.add_argument(
+        "--eval-grid",
+        choices=("development", "heldout"),
+        default="development",
+        help=(
+            "Use the generated development grid or the checksum-sealed, "
+            "physically disjoint final held-out grid."
+        ),
+    )
+    parser.add_argument(
         "--evaluation-duration",
         type=int,
         default=120,
@@ -84,6 +93,7 @@ def config_from_training_run(
             False,
         ),
         slow_down_penalty=float(row.get("reward_slow_down_penalty", 0.2)),
+        lane_change_penalty=float(row.get("reward_lane_change_penalty", 0.2)),
         collision_risk_penalty=float(
             row.get("reward_collision_risk_penalty", 3.0)
         ),
@@ -422,7 +432,14 @@ def main(argv: list[str] | None = None) -> int:
         agent: dqn_class.load(run_dir / "models" / f"{agent}_main.zip")
         for agent in args.agents
     }
-    specs = module.make_eval_specs(args.num_exposures, config)
+    if args.eval_grid == "heldout":
+        specs = module.make_sealed_heldout_specs(config)
+        grid_path = module.SEALED_HELDOUT_GRID_PATH
+        grid_sha256 = module.SEALED_HELDOUT_GRID_SHA256
+    else:
+        specs = module.make_eval_specs(args.num_exposures, config)
+        grid_path = None
+        grid_sha256 = ""
 
     all_episode_rows: list[dict[str, Any]] = []
     all_summary_rows: list[dict[str, Any]] = []
@@ -435,6 +452,10 @@ def main(argv: list[str] | None = None) -> int:
             config,
             variant,
         )
+        for row in steps:
+            row["evaluation_grid"] = args.eval_grid
+        for row in exposures:
+            row["evaluation_grid"] = args.eval_grid
         variant_dir = output_dir / variant
         module.write_csv_rows(variant_dir / "evaluation" / "steps.csv", steps)
         module.write_csv_rows(variant_dir / "evaluation" / "exposures.csv", exposures)
@@ -444,15 +465,32 @@ def main(argv: list[str] | None = None) -> int:
         )
         for row in episodes:
             row["counterfactual_variant"] = variant
+            row["evaluation_grid"] = args.eval_grid
         module.write_csv_rows(
             variant_dir / "analysis" / "actual_lane_change_summary.csv",
             episodes,
         )
         all_episode_rows.extend(episodes)
-        all_summary_rows.extend(summarize_variant(episodes, steps, variant))
+        summaries = summarize_variant(episodes, steps, variant)
+        for row in summaries:
+            row["evaluation_grid"] = args.eval_grid
+        all_summary_rows.extend(summaries)
 
     module.write_csv_rows(output_dir / "counterfactual_rollout_summary.csv", all_summary_rows)
     module.write_csv_rows(output_dir / "counterfactual_episode_summary.csv", all_episode_rows)
+    module.write_csv_rows(
+        output_dir / "evaluation_grid_manifest.csv",
+        [
+            {
+                "evaluation_grid": args.eval_grid,
+                "grid_path": str(grid_path) if grid_path is not None else "generated",
+                "grid_sha256": grid_sha256,
+                "n_exposures": len(specs),
+                "exposure_id_first": specs[0].exposure_id,
+                "exposure_id_last": specs[-1].exposure_id,
+            }
+        ],
+    )
 
     if {"original", "no-front"}.issubset(args.variants):
         paired_rows, paired_summary = paired_variant_rows(all_episode_rows)
