@@ -28,7 +28,7 @@ mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
 python3 -c \
   "import gymnasium, highway_env, stable_baselines3, torch; print(f'Python environment OK: torch={torch.__version__}, cuda={torch.cuda.is_available()}')"
 
-RUN_SEED="${PBS_ARRAY_INDEX}"
+RUN_SEED=$((3000 + PBS_ARRAY_INDEX))
 RUN_NAME="single_lane_slow_front_duration20_100k_seed${RUN_SEED}"
 
 OUTPUT_ROOT="/srv/scratch/${USER}/highway_transition_timing/outputs"

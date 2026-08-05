@@ -44,6 +44,7 @@ def load_plot_module():
 experiment = load_experiment_module()
 ExperimentConfig = experiment.ExperimentConfig
 make_training_spec = experiment.make_training_spec
+make_training_specs = experiment.make_training_specs
 
 
 def test_eval_specs_cover_full_factorial_grid_before_repeating():
@@ -117,7 +118,7 @@ def test_near_matched_training_specs_use_held_out_continuous_states():
         near_matched_speed_delta=2.0,
     )
 
-    specs = [make_training_spec(index, config) for index in range(128)]
+    specs = make_training_specs(128, config)
     speed_deltas = [spec.front_speed - spec.ego_speed for spec in specs]
 
     assert all(spec.include_front_vehicle for spec in specs)
@@ -130,10 +131,7 @@ def test_near_matched_training_specs_use_held_out_continuous_states():
     )
     assert any(delta < 0.0 for delta in speed_deltas)
     assert any(delta > 0.0 for delta in speed_deltas)
-    assert all(
-        spec.exposure_seed >= experiment.TRAINING_SPEC_SEED_OFFSET
-        for spec in specs
-    )
+    assert {spec.exposure_seed for spec in specs} == {config.seed}
 
 
 def test_training_control_fractions_must_form_valid_mixture():
@@ -157,10 +155,35 @@ def test_default_time_and_target_speed_configuration_is_physically_explicit():
     )
 
     assert config.policy_step_seconds == pytest.approx(0.2)
+    assert config.training_max_policy_steps == 600
     assert config.evaluation_max_policy_steps == 600
     assert config.target_speeds == (10.0, 15.0, 20.0, 25.0, 30.0, 35.0)
     assert min(config.target_speeds) <= experiment.SLOW_FRONT_SPEED_RANGE[0]
     assert max(config.target_speeds) >= experiment.EGO_SPEED_RANGE[1]
+
+
+def test_training_wrapper_enforces_exact_policy_step_horizon():
+    class EndlessEnv:
+        def step(self, action):
+            return "obs", 0.0, False, False, {"action": action}
+
+    wrapper = object.__new__(experiment.SingleLaneTrainingResetWrapper)
+    wrapper.env = EndlessEnv()
+    wrapper.config = ExperimentConfig(duration=20, policy_frequency=5)
+    wrapper.episode_step_count = 0
+
+    for _ in range(99):
+        _obs, _reward, terminated, truncated, info = wrapper.step(1)
+        assert terminated is False
+        assert truncated is False
+        assert "training_horizon_reached" not in info
+
+    _obs, _reward, terminated, truncated, info = wrapper.step(1)
+
+    assert wrapper.episode_step_count == 100
+    assert terminated is False
+    assert truncated is True
+    assert info["training_horizon_reached"] is True
 
 
 def test_target_speed_grid_must_be_strictly_increasing():
@@ -204,10 +227,10 @@ def test_reward_strength_cli_and_effective_weights_follow_frozen_rules():
 
 def test_stratified_training_block_has_exact_family_and_difficulty_counts():
     config = ExperimentConfig(seed=17)
-    specs = [
-        make_training_spec(index, config)
-        for index in range(len(experiment.STRATIFIED_TRAINING_BLOCK))
-    ]
+    specs = make_training_specs(
+        len(experiment.STRATIFIED_TRAINING_BLOCK),
+        config,
+    )
 
     assert Counter(spec.scenario_type for spec in specs) == {
         "train_no_front": 4,
@@ -230,7 +253,7 @@ def test_stratified_training_block_has_exact_family_and_difficulty_counts():
 
 def test_stratified_training_controls_have_separate_closing_semantics():
     config = ExperimentConfig(seed=23)
-    specs = [make_training_spec(index, config) for index in range(40)]
+    specs = make_training_specs(40, config)
     no_front = [spec for spec in specs if spec.scenario_type == "train_no_front"]
     non_closing = [
         spec
@@ -264,22 +287,21 @@ def test_stratified_training_controls_have_separate_closing_semantics():
     assert all(not spec.visible_at_t0 for spec in delayed)
 
 
-def test_stratified_training_specs_are_reproducible_by_seed_and_reset_index():
-    config = ExperimentConfig(seed=31)
-    first = [make_training_spec(index, config) for index in range(60)]
-    repeated = [make_training_spec(index, config) for index in range(60)]
-    different_seed = [
-        make_training_spec(index, ExperimentConfig(seed=32))
-        for index in range(60)
-    ]
+def test_stratified_training_specs_are_reproducible_by_run_seed():
+    config = ExperimentConfig(seed=3000)
+    first = make_training_specs(60, config)
+    repeated = make_training_specs(60, config)
+    different_seed = make_training_specs(60, ExperimentConfig(seed=3001))
 
     assert first == repeated
     assert first != different_seed
+    assert {spec.exposure_seed for spec in first} == {3000}
+    assert make_training_spec(59, config) == first[59]
 
 
 def test_visible_slow_front_specs_respect_declared_state_constraints():
     config = ExperimentConfig(seed=41)
-    specs = [make_training_spec(index, config) for index in range(200)]
+    specs = make_training_specs(200, config)
     visible = [
         spec
         for spec in specs

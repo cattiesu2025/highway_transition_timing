@@ -67,7 +67,9 @@ PYTHONPATH=src python experiments/single_lane_slow_front/run.py \
 This isolated diagnostic keeps the total training budget at 100,000 policy
 steps but shortens each fixed training episode from 120 s to 20 s. Evaluation
 remains 120 s. At 5 Hz this changes the nominal episode cap from 600 to 100
-policy steps, producing roughly 1,000 reset exposures per non-terminal agent
+policy steps. The training wrapper enforces this integer step cap explicitly,
+avoiding an extra step from floating-point time accumulation. This produces
+roughly 1,000 reset exposures per non-terminal agent
 run instead of roughly 167 full-duration exposures. Reward weights, the
 stratified block, Double DQN hyperparameters, target speeds, and the evaluation
 grid remain unchanged.
@@ -79,10 +81,13 @@ array:
 qsub scripts/katana_single_lane_duration20_20seed.pbs
 ```
 
-The array uses seeds `0-19`. Each task audits 2,000 specifications, trains the
-1x FD/BAL/SP policies for 100,000 total steps with `--duration 20`, evaluates
-36 original slow-front scenes with `--evaluation-duration 120`, and verifies
-the three saved model archives. Outputs are written to:
+Array indices `0-19` map directly to run seeds `3000-3019`. Each run
+initializes its training RNG once and samples one continuous scenario stream;
+FD/BAL/SP replay the same within-run stream prefix for paired comparison. Each
+task audits 2,000 specifications, trains the 1x FD/BAL/SP policies for 100,000
+total steps with `--duration 20`, evaluates 36 original slow-front scenes with
+`--evaluation-duration 120`, and verifies the three saved model archives.
+Outputs are written to:
 
 ```text
 /srv/scratch/$USER/highway_transition_timing/outputs/

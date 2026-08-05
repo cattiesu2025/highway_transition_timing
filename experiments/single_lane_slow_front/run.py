@@ -62,8 +62,6 @@ COUNTERFACTUAL_VARIANTS = (
 TRAINING_SCENARIO_PROFILES = ("stratified", "legacy-random")
 REWARD_STRENGTH_MULTIPLIERS = (1.0, 2.0, 4.0)
 DEFAULT_TARGET_SPEEDS = (10.0, 15.0, 20.0, 25.0, 30.0, 35.0)
-TRAINING_SPEC_SEED_OFFSET = 1_000_000
-TRAINING_BLOCK_SEED_OFFSET = 2_000_000
 NEAR_MATCHED_SPEED_MIN_ABS_DELTA = 0.25
 VEHICLE_LENGTH_METRES = 5.0
 OBSERVATION_DISTANCE_METRES = 200.0
@@ -184,6 +182,10 @@ class ExperimentConfig:
         return 1.0 / self.policy_frequency
 
     @property
+    def training_max_policy_steps(self) -> int:
+        return int(round(self.duration * self.policy_frequency))
+
+    @property
     def evaluation_max_policy_steps(self) -> int:
         return int(round(self.evaluation_duration * self.policy_frequency))
 
@@ -228,6 +230,38 @@ class SingleLaneSpec:
         return self.closing_speed**2 / (2.0 * self.net_distance)
 
 
+class TrainingScenarioGenerator:
+    """Generate one deterministic continuous RNG stream for a training run."""
+
+    def __init__(self, config: ExperimentConfig):
+        self.config = config
+        self.rng = random.Random(config.seed)
+        self.reset_index = 0
+        self.stratified_block: list[tuple[str, str, str]] = []
+
+    def next_spec(self) -> SingleLaneSpec:
+        reset_index = self.reset_index
+        if self.config.training_scenario_profile == "legacy-random":
+            spec = make_legacy_random_training_spec(
+                reset_index,
+                self.config,
+                self.rng,
+            )
+        else:
+            block_position = reset_index % len(STRATIFIED_TRAINING_BLOCK)
+            if block_position == 0:
+                self.stratified_block = list(STRATIFIED_TRAINING_BLOCK)
+                self.rng.shuffle(self.stratified_block)
+            spec = make_stratified_training_spec(
+                reset_index,
+                self.config,
+                self.rng,
+                self.stratified_block[block_position],
+            )
+        self.reset_index += 1
+        return spec
+
+
 class SingleLaneTrainingResetWrapper(_GymWrapper):
     """Replace resets with slow-front, no-front, or near-matched scenes."""
 
@@ -238,6 +272,8 @@ class SingleLaneTrainingResetWrapper(_GymWrapper):
             super().__init__(env)
         self.config = config
         self.reset_count = 0
+        self.episode_step_count = 0
+        self.training_scenario_generator = TrainingScenarioGenerator(config)
         self.last_training_exposure: SingleLaneSpec | None = None
         self.training_variant_counts: Counter[str] = Counter()
         self.training_spec_rows: list[dict[str, Any]] = []
@@ -247,8 +283,11 @@ class SingleLaneTrainingResetWrapper(_GymWrapper):
 
     def reset(self, **kwargs):
         obs, info = self.env.reset(**kwargs)
+        self.episode_step_count = 0
         reset_index = self.reset_count
-        spec = make_training_spec(reset_index, self.config)
+        spec = self.training_scenario_generator.next_spec()
+        if self.training_scenario_generator.reset_index != reset_index + 1:
+            raise RuntimeError("training scenario generator is out of sync")
         self.reset_count += 1
         self.last_training_exposure = spec
         self.training_variant_counts[spec.scenario_type] += 1
@@ -261,7 +300,16 @@ class SingleLaneTrainingResetWrapper(_GymWrapper):
         return obs, info
 
     def step(self, action):
-        return self.env.step(action)
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        self.episode_step_count += 1
+        reached_horizon = (
+            self.episode_step_count >= self.config.training_max_policy_steps
+        )
+        if reached_horizon and not terminated:
+            truncated = True
+            info = dict(info)
+            info["training_horizon_reached"] = True
+        return obs, reward, terminated, truncated, info
 
     def close(self):
         return self.env.close()
@@ -710,26 +758,38 @@ def make_eval_specs(num_exposures: int, config: ExperimentConfig) -> list[Single
 
 
 def make_training_spec(reset_index: int, config: ExperimentConfig) -> SingleLaneSpec:
-    if config.training_scenario_profile == "legacy-random":
-        return make_legacy_random_training_spec(reset_index, config)
-    return make_stratified_training_spec(reset_index, config)
+    """Replay the run RNG stream and return one indexed training specification."""
+
+    if reset_index < 0:
+        raise ValueError("reset_index must be non-negative")
+    return make_training_specs(reset_index + 1, config)[-1]
+
+
+def make_training_specs(
+    num_resets: int,
+    config: ExperimentConfig,
+) -> list[SingleLaneSpec]:
+    """Generate a deterministic prefix from one RNG initialized by run seed."""
+
+    if num_resets < 0:
+        raise ValueError("num_resets must be non-negative")
+    generator = TrainingScenarioGenerator(config)
+    return [generator.next_spec() for _ in range(num_resets)]
 
 
 def make_stratified_training_spec(
     reset_index: int,
     config: ExperimentConfig,
+    rng: random.Random,
+    slot: tuple[str, str, str],
 ) -> SingleLaneSpec:
-    training_seed = config.seed + TRAINING_SPEC_SEED_OFFSET + reset_index
-    rng = random.Random(training_seed)
-    scenario_type, expected_ttc_bin, expected_deceleration_bin = (
-        stratified_training_slot(reset_index, config.seed)
-    )
+    scenario_type, expected_ttc_bin, expected_deceleration_bin = slot
 
     if scenario_type == "train_no_front":
         ego_speed = rng.uniform(*EGO_SPEED_RANGE)
         return build_single_lane_spec(
             exposure_id=f"train_reset_{reset_index:06d}",
-            exposure_seed=training_seed,
+            exposure_seed=config.seed,
             ego_speed=ego_speed,
             front_distance=0.0,
             front_speed=ego_speed,
@@ -745,7 +805,7 @@ def make_stratified_training_spec(
         )
         return build_single_lane_spec(
             exposure_id=f"train_reset_{reset_index:06d}",
-            exposure_seed=training_seed,
+            exposure_seed=config.seed,
             ego_speed=ego_speed,
             front_distance=rng.uniform(*VISIBLE_TRAIN_DISTANCE_RANGE),
             front_speed=front_speed,
@@ -761,7 +821,7 @@ def make_stratified_training_spec(
         )
         return build_single_lane_spec(
             exposure_id=f"train_reset_{reset_index:06d}",
-            exposure_seed=training_seed,
+            exposure_seed=config.seed,
             ego_speed=ego_speed,
             front_distance=rng.uniform(*VISIBLE_TRAIN_DISTANCE_RANGE),
             front_speed=front_speed,
@@ -770,35 +830,21 @@ def make_stratified_training_spec(
         )
 
     if scenario_type == "train_delayed_visible_front":
-        return sample_delayed_visible_training_spec(reset_index, training_seed, rng)
+        return sample_delayed_visible_training_spec(reset_index, config.seed, rng)
 
     return sample_visible_slow_front_training_spec(
         reset_index=reset_index,
-        training_seed=training_seed,
+        run_seed=config.seed,
         rng=rng,
         expected_ttc_bin=expected_ttc_bin,
         expected_deceleration_bin=expected_deceleration_bin,
     )
 
 
-def stratified_training_slot(
-    reset_index: int,
-    seed: int,
-) -> tuple[str, str, str]:
-    block_index, block_position = divmod(
-        reset_index,
-        len(STRATIFIED_TRAINING_BLOCK),
-    )
-    block = list(STRATIFIED_TRAINING_BLOCK)
-    block_rng = random.Random(seed + TRAINING_BLOCK_SEED_OFFSET + block_index)
-    block_rng.shuffle(block)
-    return block[block_position]
-
-
 def sample_visible_slow_front_training_spec(
     *,
     reset_index: int,
-    training_seed: int,
+    run_seed: int,
     rng: random.Random,
     expected_ttc_bin: str,
     expected_deceleration_bin: str,
@@ -824,7 +870,7 @@ def sample_visible_slow_front_training_spec(
             continue
         spec = build_single_lane_spec(
             exposure_id=f"train_reset_{reset_index:06d}",
-            exposure_seed=training_seed,
+            exposure_seed=run_seed,
             ego_speed=ego_speed,
             front_distance=front_distance,
             front_speed=front_speed,
@@ -844,7 +890,7 @@ def sample_visible_slow_front_training_spec(
 
 def sample_delayed_visible_training_spec(
     reset_index: int,
-    training_seed: int,
+    run_seed: int,
     rng: random.Random,
 ) -> SingleLaneSpec:
     for _attempt in range(10_000):
@@ -858,7 +904,7 @@ def sample_delayed_visible_training_spec(
             continue
         spec = build_single_lane_spec(
             exposure_id=f"train_reset_{reset_index:06d}",
-            exposure_seed=training_seed,
+            exposure_seed=run_seed,
             ego_speed=ego_speed,
             front_distance=front_distance,
             front_speed=front_speed,
@@ -873,9 +919,8 @@ def sample_delayed_visible_training_spec(
 def make_legacy_random_training_spec(
     reset_index: int,
     config: ExperimentConfig,
+    rng: random.Random,
 ) -> SingleLaneSpec:
-    training_seed = config.seed + TRAINING_SPEC_SEED_OFFSET + reset_index
-    rng = random.Random(training_seed)
     variant_draw = rng.random()
     ego_speed = rng.uniform(*EGO_SPEED_RANGE)
     front_distance = rng.uniform(90.0, 220.0)
@@ -904,7 +949,7 @@ def make_legacy_random_training_spec(
 
     return build_single_lane_spec(
         exposure_id=f"train_reset_{reset_index:06d}",
-        exposure_seed=training_seed,
+        exposure_seed=config.seed,
         ego_speed=ego_speed,
         front_distance=front_distance,
         front_speed=front_speed,
@@ -921,7 +966,8 @@ def training_spec_row(
     return {
         "reset_index": reset_index,
         "exposure_id": spec.exposure_id,
-        "scene_seed": spec.exposure_seed,
+        "run_seed": config.seed,
+        "training_rng_mode": "continuous_per_run",
         "training_scenario_profile": config.training_scenario_profile,
         "scenario_type": spec.scenario_type,
         "include_front_vehicle": spec.include_front_vehicle,
@@ -1208,6 +1254,7 @@ def train_agents(
                 "action_space": "SLOWER,IDLE,FASTER",
                 "target_speeds_mps": json_dumps(list(config.target_speeds)),
                 "training_scenario_profile": config.training_scenario_profile,
+                "training_rng_mode": "continuous_per_run",
                 "training_scenario_block_size": len(STRATIFIED_TRAINING_BLOCK),
                 "training_scenario_block_family_counts": json_dumps(
                     dict(sorted(block_family_counts.items()))
@@ -1225,6 +1272,7 @@ def train_agents(
                 "training_scene_counts": json_dumps(training_variant_counts),
                 "training_reset_count": len(agent_scenario_rows),
                 "training_duration_seconds": config.duration,
+                "training_max_policy_steps": config.training_max_policy_steps,
                 "evaluation_duration_seconds": config.evaluation_duration,
                 "policy_frequency_hz": config.policy_frequency,
                 "policy_step_seconds": round(config.policy_step_seconds, 6),
@@ -1970,7 +2018,7 @@ def audit_training_scenarios(
             "num_resets must cover at least one complete stratified block "
             f"({len(STRATIFIED_TRAINING_BLOCK)})"
         )
-    specs = [make_training_spec(index, config) for index in range(num_resets)]
+    specs = make_training_specs(num_resets, config)
     rows = [
         training_spec_row(index, spec, config)
         for index, spec in enumerate(specs)
@@ -2061,7 +2109,7 @@ def immediate_slowdown_oracle_rows(
                 "ttc_bin": key[1],
                 "required_deceleration_bin": key[2],
                 "exposure_id": spec.exposure_id,
-                "scene_seed": spec.exposure_seed,
+                "run_seed": config.seed,
                 "initial_ttc_seconds": round(spec.ttc_seconds, 6),
                 "initial_required_deceleration_mps2": round(
                     spec.required_deceleration,
@@ -2111,7 +2159,7 @@ def main(argv: list[str] | None = None) -> int:
             args.num_resets,
             config,
         )
-        specs = [make_training_spec(index, config) for index in range(args.num_resets)]
+        specs = make_training_specs(args.num_resets, config)
         oracle_rows = immediate_slowdown_oracle_rows(specs, config)
         write_csv_rows(output_dir / "immediate_slowdown_oracle.csv", oracle_rows)
         oracle_pass = bool(oracle_rows) and all(
