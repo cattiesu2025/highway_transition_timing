@@ -144,12 +144,16 @@ scripts/
 ├── katana_multilane_duration20_20seed.pbs
 ├── katana_multilane_open_lane_change.pbs
 ├── katana_single_lane_duration20_20seed.pbs
-├── katana_single_lane_stratified.pbs
-└── plot_training_diagnostics.py
+└── katana_single_lane_stratified.pbs
+figures/                        # local plotting workspace, ignored
+├── single_lane/
+├── multilane/
+└── shared/
 src/highway_transition_timing/
 tests/
 outputs/                         # generated and ignored
 ```
 
-Generated runs, caches, local dependency folders, and temporary work products
-are ignored. Experiment commands recreate their required output directories.
+Generated runs, local figure scripts, caches, dependency folders, and temporary
+work products are ignored. Experiment commands recreate their required output
+directories.

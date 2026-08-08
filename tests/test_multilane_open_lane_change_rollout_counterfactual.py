@@ -4,6 +4,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def load_module():
     path = (
@@ -27,10 +29,12 @@ def load_module():
 def load_plot_module():
     path = (
         Path(__file__).parents[1]
-        / "experiments"
-        / "multilane_open_lane_change"
+        / "figures"
+        / "multilane"
         / "plot_report_figures.py"
     )
+    if not path.exists():
+        pytest.skip("Local Git-ignored multi-lane plotting script is unavailable")
     spec = importlib.util.spec_from_file_location(
         "multilane_plot_report_figures",
         path,

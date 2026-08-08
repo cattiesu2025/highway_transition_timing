@@ -127,9 +127,12 @@ evaluating each new run so reward traces and metadata use its trained weights.
 Generate the seed-0 training, validation, and requested two-panel
 counterfactual figures with R:
 
+The plotting scripts are maintained locally under the ignored `figures/`
+workspace and are intentionally not distributed through Git.
+
 ```bash
 R_LIBS_USER=tmp/r-lib Rscript \
-  experiments/single_lane_slow_front/plot_reward_strength_validation.R
+  figures/single_lane/plot_reward_strength_validation.R
 ```
 
 The completed seed-0 pilot failed the predeclared directional and
@@ -232,11 +235,11 @@ Outputs:
 
 After the five `single_lane_slow_front_stratified_100k_seed{0..4}` directories
 are available locally, generate the cross-seed training and counterfactual
-figures with:
+figures with the local, Git-ignored plotting script:
 
 ```bash
 R_LIBS_USER=tmp/r-lib Rscript \
-  experiments/single_lane_slow_front/plot_multiseed_results.R
+  figures/single_lane/plot_multiseed_results.R
 ```
 
 The script requires `ggplot2`, `patchwork`, `dplyr`, `tidyr`, `readr`,

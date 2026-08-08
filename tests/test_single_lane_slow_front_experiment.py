@@ -25,10 +25,12 @@ def load_experiment_module():
 def load_plot_module():
     path = (
         Path(__file__).resolve().parents[1]
-        / "experiments"
-        / "single_lane_slow_front"
+        / "figures"
+        / "single_lane"
         / "plot_report_figures.py"
     )
+    if not path.exists():
+        pytest.skip("Local Git-ignored single-lane plotting script is unavailable")
     spec = importlib.util.spec_from_file_location(
         "single_lane_slow_front_plot_report_figures",
         path,

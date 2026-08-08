@@ -195,10 +195,12 @@ The run writes:
 
 ## Report Figures
 
-Generate the report-facing multi-lane figures with:
+The report plotting script is maintained locally under the ignored `figures/`
+workspace and is intentionally not distributed through Git. Generate the
+report-facing multi-lane figures with:
 
 ```bash
-PYTHONPATH=src python experiments/multilane_open_lane_change/plot_report_figures.py \
+PYTHONPATH=src python figures/multilane/plot_report_figures.py \
   --run-dir outputs/multilane_open_lane_change_mixed_20k_smoke
 ```
 
@@ -244,7 +246,7 @@ PYTHONPATH=src python experiments/multilane_open_lane_change/rollout_counterfact
   --eval-grid development \
   --variants original no-front matched-speed-front far-front
 
-PYTHONPATH=src python experiments/multilane_open_lane_change/plot_report_figures.py \
+PYTHONPATH=src python figures/multilane/plot_report_figures.py \
   --run-dir outputs/multilane_open_lane_change_mixed_100k
 ```
 
@@ -257,11 +259,11 @@ An event-time version is also written to
 
 After the development rollouts for seed 0 and stratified seeds 1-4 are
 available locally, generate the cross-seed training and physical-event
-counterfactual figures with:
+counterfactual figures with the local, Git-ignored plotting script:
 
 ```bash
 R_LIBS_USER=tmp/r-lib Rscript \
-  experiments/multilane_open_lane_change/plot_multiseed_results.R
+  figures/multilane/plot_multiseed_results.R
 ```
 
 The script pools the lane-cost-0.2 seed-0 pilot with stratified seeds 1-4. It
