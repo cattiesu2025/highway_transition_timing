@@ -95,6 +95,30 @@ qsub scripts/katana_multilane_open_lane_change.pbs
 Each array task trains FD, BAL, and SP for one seed and writes to
 `/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_stratified_100k_seed<seed>/`.
 
+Before entering the held-out stage, submit the isolated 20-second-training,
+20-seed multi-lane diagnostic:
+
+```bash
+qsub scripts/katana_multilane_duration20_20seed.pbs
+```
+
+Array indices 0-19 map to seeds 4000-4019. Each policy still receives 100,000
+training steps and 120-second development evaluation; only the training episode
+horizon is shortened to 20 seconds. The PBS command passes `--no-figures`.
+After copying the completed run directories back under local `outputs/`, create
+the 20-seed training figure locally with:
+
+```bash
+R_LIBS_USER=tmp/r-lib Rscript \
+  figures/multilane/plot_multiseed_results.R \
+  outputs \
+  outputs/multilane_open_lane_change_duration20_100k_20seed/figures \
+  duration20
+```
+
+This diagnostic uses only the development grid and does not open the sealed
+held-out grid.
+
 The existing multi-lane counterfactual PBS script targets the earlier
 `mixed_100k` diagnostic models. The new stratified models use the checksum-
 sealed disjoint held-out grid through:
@@ -117,6 +141,7 @@ experiments/
 └── multilane_open_lane_change/
 scripts/
 ├── katana_multilane_heldout_rollout.pbs
+├── katana_multilane_duration20_20seed.pbs
 ├── katana_multilane_open_lane_change.pbs
 ├── katana_single_lane_duration20_20seed.pbs
 ├── katana_single_lane_stratified.pbs

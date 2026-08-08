@@ -112,6 +112,47 @@ The existing `katana_multilane_counterfactual_rollout.pbs` remains tied to the
 earlier `mixed_100k` diagnostic models. Do not use it as the final evaluation
 of this retraining iteration.
 
+## 20-Second Training-Horizon Diagnostic
+
+Before opening the held-out grid, submit the isolated 20-seed training-density
+diagnostic from the project root:
+
+```bash
+qsub scripts/katana_multilane_duration20_20seed.pbs
+```
+
+The OpenPBS array maps indices 0-19 to seeds 4000-4019. It changes only the
+training episode horizon from 120 to 20 physical seconds. FD, BAL, and SP each
+retain 100,000 total training steps, 120-second evaluation, 1x rewards, four
+lanes with ego lane 1, the frozen stratified reset block, lane-change cost 0.2,
+collision-risk cost 3.0, and 36 matched development exposures. At 5 Hz, the
+training wrapper enforces an exact 100-policy-step episode cap; evaluation is
+capped at 600 policy steps.
+
+Each task writes to:
+
+```text
+/srv/scratch/$USER/highway_transition_timing/outputs/
+  multilane_open_lane_change_duration20_100k_seed<seed>/
+```
+
+The PBS command passes `--no-figures` and only produces models, logs, CSVs, and
+development analysis on Katana. After copying all 20 directories into local
+`outputs/`, generate the cross-seed convergence image locally:
+
+```bash
+R_LIBS_USER=tmp/r-lib Rscript \
+  figures/multilane/plot_multiseed_results.R \
+  outputs \
+  outputs/multilane_open_lane_change_duration20_100k_20seed/figures \
+  duration20
+```
+
+The `duration20` plotting profile expects seeds 4000-4019. It always exports
+the local training figure and source CSVs; it defers the counterfactual figure
+until all required development-counterfactual files exist. Neither the PBS job
+nor this plotting command opens the sealed held-out grid.
+
 ## Sealed Held-Out Evaluation
 
 The final grid is the versioned file `heldout_grid_v1.csv`. It contains a

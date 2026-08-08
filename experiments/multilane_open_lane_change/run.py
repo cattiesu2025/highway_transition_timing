@@ -163,6 +163,10 @@ class ExperimentConfig:
         return 1.0 / self.policy_frequency
 
     @property
+    def training_max_policy_steps(self) -> int:
+        return int(round(self.duration * self.policy_frequency))
+
+    @property
     def evaluation_max_policy_steps(self) -> int:
         return int(round(self.evaluation_duration * self.policy_frequency))
 
@@ -218,6 +222,7 @@ class OpenLaneTrainingResetWrapper(_GymWrapper):
             super().__init__(env)
         self.config = config
         self.reset_count = 0
+        self.episode_step_count = 0
         self.last_training_exposure: OpenLaneSpec | None = None
         self.training_variant_counts: Counter[str] = Counter()
         self.training_spec_rows: list[dict[str, Any]] = []
@@ -227,6 +232,7 @@ class OpenLaneTrainingResetWrapper(_GymWrapper):
 
     def reset(self, **kwargs):
         obs, info = self.env.reset(**kwargs)
+        self.episode_step_count = 0
         reset_index = self.reset_count
         spec = make_training_spec(reset_index, self.config)
         self.reset_count += 1
@@ -241,7 +247,16 @@ class OpenLaneTrainingResetWrapper(_GymWrapper):
         return obs, info
 
     def step(self, action):
-        return self.env.step(action)
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        self.episode_step_count += 1
+        reached_horizon = (
+            self.episode_step_count >= self.config.training_max_policy_steps
+        )
+        if reached_horizon and not terminated:
+            truncated = True
+            info = dict(info)
+            info["training_horizon_reached"] = True
+        return obs, reward, terminated, truncated, info
 
     def close(self):
         return self.env.close()
@@ -1171,6 +1186,7 @@ def train_agents(
                 "evaluation_duration_seconds": config.evaluation_duration,
                 "policy_frequency_hz": config.policy_frequency,
                 "policy_step_seconds": round(config.policy_step_seconds, 6),
+                "training_max_policy_steps": config.training_max_policy_steps,
                 "evaluation_max_policy_steps": config.evaluation_max_policy_steps,
                 "training_scenario_profile": config.training_scenario_profile,
                 "training_scenario_block_size": len(STRATIFIED_TRAINING_BLOCK),

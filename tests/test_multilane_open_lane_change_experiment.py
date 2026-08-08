@@ -360,11 +360,13 @@ def test_no_front_training_fraction_is_validated():
 def test_evaluation_duration_is_converted_from_seconds_to_policy_steps():
     module = load_experiment_module()
     config = module.ExperimentConfig(
+        duration=20,
         evaluation_duration=120,
         policy_frequency=5,
     )
 
     assert config.policy_step_seconds == pytest.approx(0.2)
+    assert config.training_max_policy_steps == 100
     assert config.evaluation_max_policy_steps == 600
     assert module.policy_time_fields(4, 0, config) == {
         "t_seconds": 0.8,
@@ -373,6 +375,32 @@ def test_evaluation_duration_is_converted_from_seconds_to_policy_steps():
         "policy_frequency_hz": 5,
         "policy_step_seconds": 0.2,
     }
+
+
+def test_training_wrapper_enforces_exact_policy_step_horizon():
+    module = load_experiment_module()
+
+    class EndlessEnv:
+        def step(self, action):
+            return "obs", 0.0, False, False, {"action": action}
+
+    wrapper = object.__new__(module.OpenLaneTrainingResetWrapper)
+    wrapper.env = EndlessEnv()
+    wrapper.config = module.ExperimentConfig(duration=20, policy_frequency=5)
+    wrapper.episode_step_count = 0
+
+    for _ in range(99):
+        _obs, _reward, terminated, truncated, info = wrapper.step(1)
+        assert terminated is False
+        assert truncated is False
+        assert "training_horizon_reached" not in info
+
+    _obs, _reward, terminated, truncated, info = wrapper.step(1)
+
+    assert wrapper.episode_step_count == 100
+    assert terminated is False
+    assert truncated is True
+    assert info["training_horizon_reached"] is True
 
 
 def test_actual_lane_change_summary_separates_action_and_actual_lane_change():
