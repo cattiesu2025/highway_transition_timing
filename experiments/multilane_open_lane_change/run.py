@@ -19,7 +19,7 @@ from collections import Counter
 from collections.abc import Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from highway_transition_timing.config import AnalysisConfig
 from highway_transition_timing.constants import AGENTS, LANE_CHANGE_ONSET_TARGET, SLOW_ACTIONS
@@ -1101,6 +1101,7 @@ def train_agents(
     total_timesteps: int,
     config: ExperimentConfig,
     verbose: int,
+    callback_factory: Callable[[str, Any, Any], Any] | None = None,
 ) -> None:
     require_highway_deps(include_training=True)
     from stable_baselines3.common.logger import configure
@@ -1149,7 +1150,15 @@ def train_agents(
             verbose=verbose,
         )
         model.set_logger(configure(str(agent_logs_dir), ["stdout", "csv"]))
-        model.learn(total_timesteps=total_timesteps, progress_bar=False)
+        if callback_factory is None:
+            model.learn(total_timesteps=total_timesteps, progress_bar=False)
+        else:
+            callback = callback_factory(agent, model, training_env)
+            model.learn(
+                total_timesteps=total_timesteps,
+                progress_bar=False,
+                callback=callback,
+            )
         model_path = models_dir / f"{agent}_main.zip"
         model.save(model_path)
         training_counts = dict(
