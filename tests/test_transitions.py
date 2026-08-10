@@ -112,7 +112,10 @@ class TransitionTests(unittest.TestCase):
 
     def test_lane_change_onset_includes_latency_zero(self):
         config = AnalysisConfig(persistence_k=3, bridge_max_gap=0)
-        steps = [_step("lane", t, action="LANE_RIGHT") for t in range(5)]
+        steps = [
+            _step("lane", t, action="LANE_RIGHT", ego_lane=1 if t < 2 else 2)
+            for t in range(5)
+        ]
 
         outcomes = classify_episode_outcomes(
             steps,
@@ -122,18 +125,25 @@ class TransitionTests(unittest.TestCase):
         )
 
         self.assertEqual(outcomes[0]["episode_outcome"], VALID_ONSET)
-        self.assertEqual(outcomes[0]["target_record_type"], "stable_action_onset")
+        self.assertEqual(
+            outcomes[0]["target_record_type"], "confirmed_lane_change_onset"
+        )
         self.assertEqual(outcomes[0]["target_mode_after"], LANE_CHANGE_TARGET_LABEL)
         self.assertEqual(outcomes[0]["target_onset_t"], 0)
         self.assertEqual(outcomes[0]["target_confirmation_t"], 2)
         self.assertEqual(outcomes[0]["response_latency"], 0)
 
-    def test_lane_change_onset_waits_for_stable_action_run(self):
+    def test_lane_change_onset_confirms_single_command_after_gap(self):
+        # One meta-action, then lateral motion, then the lane index changes.
+        # This is the observed highway-env pattern that command persistence
+        # could not confirm.
         config = AnalysisConfig(persistence_k=3, bridge_max_gap=0)
-        steps = (
-            [_step("delayed_lane", t, action="IDLE") for t in range(2)]
-            + [_step("delayed_lane", t, action="LANE_RIGHT") for t in range(2, 6)]
-        )
+        actions = ["IDLE", "IDLE", "LANE_RIGHT", "FASTER", "FASTER", "FASTER"]
+        lanes = [1, 1, 1, 1, 2, 2]
+        steps = [
+            _step("gapped_lane", t, action=action, ego_lane=lane)
+            for t, (action, lane) in enumerate(zip(actions, lanes, strict=True))
+        ]
 
         outcomes = classify_episode_outcomes(
             steps,
@@ -147,18 +157,27 @@ class TransitionTests(unittest.TestCase):
         self.assertEqual(outcomes[0]["target_confirmation_t"], 4)
         self.assertEqual(outcomes[0]["response_latency"], 2)
 
-    def test_lane_change_onset_ignores_pre_exposure_action_run(self):
+    def test_lane_change_onset_requires_physical_completion(self):
         config = AnalysisConfig(persistence_k=3, bridge_max_gap=0)
-        steps = (
-            [
-                _step("pre_exposure_lane", t, action="LANE_RIGHT", exposure_t=3)
-                for t in range(3)
-            ]
-            + [
-                _step("pre_exposure_lane", t, action="IDLE", exposure_t=3)
-                for t in range(3, 6)
-            ]
+        steps = [_step("blocked_lane", t, action="LANE_RIGHT") for t in range(8)]
+
+        outcomes = classify_episode_outcomes(
+            steps,
+            transition_rows=[],
+            config=config,
+            analysis_target=LANE_CHANGE_ONSET_TARGET,
         )
+
+        self.assertEqual(outcomes[0]["episode_outcome"], NO_ONSET_CENSORED)
+
+    def test_lane_change_onset_ignores_pre_exposure_change(self):
+        config = AnalysisConfig(persistence_k=3, bridge_max_gap=0)
+        steps = [
+            _step("pre_exposure_lane", 0, action="LANE_RIGHT", ego_lane=1, exposure_t=3)
+        ] + [
+            _step("pre_exposure_lane", t, action="IDLE", ego_lane=2, exposure_t=3)
+            for t in range(1, 6)
+        ]
 
         outcomes = classify_episode_outcomes(
             steps,
@@ -172,7 +191,13 @@ class TransitionTests(unittest.TestCase):
     def test_lane_change_onset_resegments_at_exposure(self):
         config = AnalysisConfig(persistence_k=3, bridge_max_gap=0)
         steps = [
-            _step("resegmented_lane", t, action="LANE_RIGHT", exposure_t=3)
+            _step(
+                "resegmented_lane",
+                t,
+                action="LANE_RIGHT",
+                ego_lane=1 if t < 5 else 2,
+                exposure_t=3,
+            )
             for t in range(6)
         ]
 
@@ -185,7 +210,36 @@ class TransitionTests(unittest.TestCase):
 
         self.assertEqual(outcomes[0]["episode_outcome"], VALID_ONSET)
         self.assertEqual(outcomes[0]["target_onset_t"], 3)
+        self.assertEqual(outcomes[0]["target_confirmation_t"], 5)
         self.assertEqual(outcomes[0]["response_latency"], 0)
+
+    def test_lane_change_onset_falls_back_when_command_outside_window(self):
+        config = AnalysisConfig(
+            persistence_k=3,
+            bridge_max_gap=0,
+            lane_change_confirmation_window=2,
+        )
+        actions = ["LANE_RIGHT"] + ["IDLE"] * 6
+        lanes = [1, 1, 1, 1, 1, 2, 2]
+        steps = [
+            _step("late_completion", t, action=action, ego_lane=lane)
+            for t, (action, lane) in enumerate(zip(actions, lanes, strict=True))
+        ]
+
+        outcomes = classify_episode_outcomes(
+            steps,
+            transition_rows=[],
+            config=config,
+            analysis_target=LANE_CHANGE_ONSET_TARGET,
+        )
+
+        self.assertEqual(outcomes[0]["episode_outcome"], VALID_ONSET)
+        self.assertEqual(
+            outcomes[0]["target_record_type"],
+            "confirmed_lane_change_onset_without_command",
+        )
+        self.assertEqual(outcomes[0]["target_onset_t"], 5)
+        self.assertEqual(outcomes[0]["target_confirmation_t"], 5)
 
     def test_slowdown_onset_uses_stable_slow_action(self):
         config = AnalysisConfig(persistence_k=3, bridge_max_gap=0)

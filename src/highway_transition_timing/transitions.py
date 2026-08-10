@@ -184,13 +184,10 @@ def classify_episode_outcomes(
         horizon = _episode_horizon(steps, config)
         collision_t = _first_collision_t(steps)
         if analysis_target == LANE_CHANGE_ONSET_TARGET:
-            target_transition = select_first_stable_action_onset(
+            target_transition = select_first_confirmed_lane_change_onset(
                 steps,
                 config=config,
                 exposure_t=exposure_t,
-                target_actions=LANE_CHANGE_ACTIONS,
-                target_label=LANE_CHANGE_TARGET_LABEL,
-                include_lane_delta=True,
             )
         elif analysis_target == SLOWDOWN_ONSET_TARGET:
             target_transition = select_first_stable_slowdown_onset(
@@ -327,54 +324,72 @@ def select_first_stable_mode_onset(
     return None
 
 
-def select_first_stable_action_onset(
+def select_first_confirmed_lane_change_onset(
     step_rows: Sequence[Mapping[str, Any]],
     config: AnalysisConfig,
     exposure_t: int = 0,
-    target_actions: set[str] | None = None,
-    target_label: str = "action",
-    include_lane_delta: bool = False,
 ) -> dict[str, Any] | None:
-    """Select first stable action-level target onset, including exposure_t."""
+    """Select the lane-change onset confirmed by a realised lane-index change.
+
+    A lane change is one meta-action followed by roughly two seconds of lateral
+    motion, so command persistence cannot confirm it. Confirmation is instead
+    the first realised physical lane-index change after exposure, and onset is
+    the earliest lane-change command inside the confirmation window that
+    precedes it. Episodes that never complete a lane change have no onset,
+    however many lane-change commands they issued.
+    """
 
     if not step_rows:
         return None
 
-    action_set = {action.upper() for action in (target_actions or set())}
     ordered_steps = sorted(step_rows, key=lambda row: get_int(row, "t", 0))
     episode_id = get_str(ordered_steps[0], "episode_id")
     post_exposure_steps = [
         row for row in ordered_steps if get_int(row, "t", 0) >= exposure_t
     ]
-    evidence_segments = _action_evidence_segments(
-        post_exposure_steps,
-        action_set,
-        include_lane_delta=include_lane_delta,
+    if not post_exposure_steps:
+        return None
+
+    initial_lane = get_int(post_exposure_steps[0], "ego_lane", 0)
+    confirmation_t: int | None = None
+    for row in post_exposure_steps:
+        pre_lane = get_int(row, "ego_lane", initial_lane)
+        post_lane = get_int(row, "post_ego_lane", pre_lane)
+        if pre_lane != initial_lane or post_lane != initial_lane:
+            confirmation_t = get_int(row, "t", 0)
+            break
+    if confirmation_t is None:
+        return None
+
+    window_start = max(exposure_t, confirmation_t - config.lane_change_confirmation_window)
+    command_times = [
+        get_int(row, "t", 0)
+        for row in post_exposure_steps
+        if get_str(row, "action").upper() in LANE_CHANGE_ACTIONS
+        and window_start <= get_int(row, "t", 0) <= confirmation_t
+    ]
+    onset_t = min(command_times) if command_times else confirmation_t
+    record_type = (
+        "confirmed_lane_change_onset"
+        if command_times
+        else "confirmed_lane_change_onset_without_command"
     )
 
-    for segment in evidence_segments:
-        if segment["end_t"] < exposure_t:
-            continue
-        onset_t = max(int(segment["start_t"]), exposure_t)
-        confirmation_t = onset_t + config.persistence_k - 1
-        if confirmation_t > segment["end_t"]:
-            continue
-        return {
-            "transition_id": f"{episode_id}:{target_label}:onset000",
-            "record_type": "stable_action_onset",
-            "episode_id": episode_id,
-            "mode_before": "",
-            "mode_after": target_label,
-            "onset_t": onset_t,
-            "confirmation_t": confirmation_t,
-            "transition_interval": [onset_t, confirmation_t],
-            "persistence_length": segment["length"],
-            "transition_confidence": 1.0,
-            "local_context_before": {},
-            "local_context_after": _context_at_or_before(ordered_steps, onset_t),
-            "response_latency": onset_t - exposure_t,
-        }
-    return None
+    return {
+        "transition_id": f"{episode_id}:{LANE_CHANGE_TARGET_LABEL}:onset000",
+        "record_type": record_type,
+        "episode_id": episode_id,
+        "mode_before": "",
+        "mode_after": LANE_CHANGE_TARGET_LABEL,
+        "onset_t": onset_t,
+        "confirmation_t": confirmation_t,
+        "transition_interval": [onset_t, confirmation_t],
+        "persistence_length": confirmation_t - onset_t + 1,
+        "transition_confidence": 1.0,
+        "local_context_before": {},
+        "local_context_after": _context_at_or_before(ordered_steps, onset_t),
+        "response_latency": onset_t - exposure_t,
+    }
 
 
 def select_first_stable_slowdown_onset(
@@ -448,40 +463,6 @@ def select_target_transition(
         return None
 
     raise ValueError(f"Unsupported analysis target: {analysis_target}")
-
-
-def _action_evidence_segments(
-    step_rows: Sequence[Mapping[str, Any]],
-    target_actions: set[str],
-    include_lane_delta: bool = False,
-) -> list[dict[str, int]]:
-    segments: list[dict[str, int]] = []
-    current: dict[str, int] | None = None
-    previous_lane: int | None = None
-
-    for row in step_rows:
-        t = get_int(row, "t", 0)
-        action = get_str(row, "action").upper()
-        lane = get_int(row, "ego_lane", 0)
-        lane_delta = 0 if previous_lane is None else lane - previous_lane
-        has_evidence = action in target_actions or (include_lane_delta and lane_delta != 0)
-        previous_lane = lane
-
-        if has_evidence:
-            if current is None or t != current["end_t"] + 1:
-                if current is not None:
-                    segments.append(current)
-                current = {"start_t": t, "end_t": t, "length": 1}
-            else:
-                current["end_t"] = t
-                current["length"] += 1
-        elif current is not None:
-            segments.append(current)
-            current = None
-
-    if current is not None:
-        segments.append(current)
-    return segments
 
 
 def _slowdown_evidence_segments(

@@ -28,7 +28,7 @@ def load_experiment_module():
 
 def test_eval_specs_are_open_lane_slow_front_only():
     module = load_experiment_module()
-    config = module.ExperimentConfig(seed=11, lanes_count=4, ego_lane=1)
+    config = module.ExperimentConfig(seed=11, lanes_count=2, ego_lane=1)
 
     specs = module.make_eval_specs(6, config)
 
@@ -40,7 +40,7 @@ def test_eval_specs_are_open_lane_slow_front_only():
 
 def test_eval_specs_cover_full_factorial_grid_before_repeating():
     module = load_experiment_module()
-    config = module.ExperimentConfig(seed=11, lanes_count=4, ego_lane=1)
+    config = module.ExperimentConfig(seed=11, lanes_count=2, ego_lane=1)
 
     specs = module.make_eval_specs(37, config)
     first_cycle = specs[:36]
@@ -71,11 +71,11 @@ def test_eval_specs_cover_full_factorial_grid_before_repeating():
 
 def test_sealed_heldout_grid_is_fixed_and_marginally_disjoint_from_development():
     module = load_experiment_module()
-    config = module.ExperimentConfig(seed=0, lanes_count=4, ego_lane=1)
+    config = module.ExperimentConfig(seed=0, lanes_count=2, ego_lane=1)
 
     heldout = module.make_sealed_heldout_specs(config)
     heldout_other_training_seed = module.make_sealed_heldout_specs(
-        module.ExperimentConfig(seed=4, lanes_count=4, ego_lane=1)
+        module.ExperimentConfig(seed=4, lanes_count=2, ego_lane=1)
     )
     development = module.make_eval_specs(36, config)
 
@@ -118,7 +118,7 @@ def test_sealed_heldout_grid_checksum_rejects_mutation(tmp_path):
 
 def test_stratified_training_block_has_exact_family_quotas():
     module = load_experiment_module()
-    config = module.ExperimentConfig(seed=3, lanes_count=4, ego_lane=1)
+    config = module.ExperimentConfig(seed=3, lanes_count=2, ego_lane=1)
 
     specs = [module.make_training_spec(index, config) for index in range(20)]
     counts = Counter(spec.scenario_type for spec in specs)

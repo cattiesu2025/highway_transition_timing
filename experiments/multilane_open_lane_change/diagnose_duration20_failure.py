@@ -402,7 +402,7 @@ def main() -> None:
         seed=FAILED_SEED,
         duration=20,
         evaluation_duration=120,
-        lanes_count=4,
+        lanes_count=2,
         ego_lane=1,
     )
 

@@ -6,8 +6,8 @@ limited to two experiment directories:
 
 - `experiments/single_lane_slow_front/`: slowdown-onset timing in a controlled
   single-lane slow-front scenario;
-- `experiments/multilane_open_lane_change/`: lane-change-onset timing when an
-  adjacent escape lane is open.
+- `experiments/multilane_open_lane_change/`: lane-change-onset timing on a
+  two-lane road when the adjacent left lane is open.
 
 Vanilla Stable-Baselines3 DQN is not supported. All training and model loading
 use the project's Double DQN implementation in
@@ -68,6 +68,16 @@ qsub scripts/katana_single_lane_duration20_20seed.pbs
 This keeps 100,000 total training steps and all reward/scenario settings fixed,
 using separate `single_lane_slow_front_duration20_100k_seed<seed>` outputs.
 
+The maintained 20-seed array adds checkpoint-gated model selection:
+
+```bash
+qsub scripts/katana_single_lane_selected_20seed.pbs
+```
+
+Each policy saves a checkpoint every 5,000 steps and the run keeps the latest
+checkpoint that passes the frozen development eligibility gate, recording the
+decision in `model_selection.csv`. See `docs/implementation.md` for the gate.
+
 See `experiments/single_lane_slow_front/README.md` for reset strata,
 counterfactual commands, and output details.
 
@@ -105,6 +115,12 @@ qsub scripts/katana_multilane_duration20_20seed.pbs
 Array indices 0-19 map to seeds 4000-4019. Each policy still receives 100,000
 training steps and 120-second development evaluation; only the training episode
 horizon is shortened to 20 seconds. The PBS command passes `--no-figures`.
+That array reproduces the superseded four-lane results. The maintained
+multi-lane array uses two lanes and checkpoint-gated model selection:
+
+```bash
+qsub scripts/katana_multilane_twolane_selected_20seed.pbs
+```
 After copying the completed run directories back under local `outputs/`, create
 the 20-seed training figure locally with:
 

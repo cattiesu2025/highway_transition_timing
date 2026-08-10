@@ -462,7 +462,7 @@ def main() -> int:
         duration=args.duration,
         evaluation_duration=args.evaluation_duration,
         seed=args.seed,
-        lanes_count=4,
+        lanes_count=2,
         ego_lane=1,
         policy_frequency=5,
         simulation_frequency=15,

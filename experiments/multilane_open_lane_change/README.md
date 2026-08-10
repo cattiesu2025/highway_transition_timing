@@ -4,10 +4,18 @@ This is an isolated multi-lane sanity experiment for lane-change timing.
 
 The controlled evaluation scene contains:
 
-- one ego vehicle;
+- one ego vehicle in the right lane of a two-lane road;
 - one slower front vehicle in the ego lane;
-- multiple empty adjacent lanes;
+- one empty adjacent lane to the left;
 - no random background traffic.
+
+The geometry is two lanes with ego lane 1, so the only escape from the slow
+front vehicle is a left lane change. This removes the choice of which open lane
+to take, which was a confound on lane-change timing under the earlier four-lane
+geometry. Results produced before this change used four lanes and are retained
+as superseded development evidence; four-lane policies cannot be evaluated
+here, because the `highway-env` observation `y` normalisation range scales with
+the lane count.
 
 The goal is to test whether FD, BAL, and SP show different lane-change timing
 when a lane-change escape is genuinely available.
@@ -123,11 +131,29 @@ qsub scripts/katana_multilane_duration20_20seed.pbs
 
 The OpenPBS array maps indices 0-19 to seeds 4000-4019. It changes only the
 training episode horizon from 120 to 20 physical seconds. FD, BAL, and SP each
-retain 100,000 total training steps, 120-second evaluation, 1x rewards, four
-lanes with ego lane 1, the frozen stratified reset block, lane-change cost 0.2,
-collision-risk cost 3.0, and 36 matched development exposures. At 5 Hz, the
-training wrapper enforces an exact 100-policy-step episode cap; evaluation is
-capped at 600 policy steps.
+retain 100,000 total training steps, 120-second evaluation, 1x rewards, ego
+lane 1, the frozen stratified reset block, lane-change cost 0.2, collision-risk
+cost 3.0, and 36 matched development exposures. At 5 Hz, the training wrapper
+enforces an exact 100-policy-step episode cap; evaluation is capped at 600
+policy steps.
+
+This array is retained to reproduce the superseded four-lane results; it still
+passes `--lanes-count 4` explicitly. The maintained protocol is the two-lane
+selected array below.
+
+## Two-Lane Retraining With Model Selection
+
+```bash
+qsub scripts/katana_multilane_twolane_selected_20seed.pbs
+```
+
+Array indices 0-19 map to seeds 4000-4019 and write to
+`multilane_open_lane_change_twolane_selected_100k_seed<seed>`, so the earlier
+four-lane directories are untouched. Each policy saves a checkpoint every 5,000
+steps under `models/checkpoints/`; the run then keeps the latest checkpoint that
+passes the frozen development eligibility gate and records every checkpoint it
+examined in `model_selection.csv`. The gate and its thresholds are documented in
+`docs/implementation.md`. The sealed held-out grid is not loaded by this array.
 
 Each task writes to:
 

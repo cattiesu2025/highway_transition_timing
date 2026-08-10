@@ -30,6 +30,14 @@ from highway_transition_timing.highway_adapter import (
     step_row_from_diagnostics,
 )
 from highway_transition_timing.io import write_csv_rows
+from highway_transition_timing.model_selection import (
+    CHECKPOINT_INTERVAL_STEPS,
+    GATE_VARIANTS,
+    CheckpointSaver,
+    available_checkpoints,
+    select_latest_eligible_checkpoint,
+    variant_outcome,
+)
 from highway_transition_timing.pipeline import PipelineResult, run_pipeline
 from highway_transition_timing.plotting import (
     write_optional_figures,
@@ -428,6 +436,20 @@ def build_parser() -> argparse.ArgumentParser:
             "Maximum absolute front-minus-ego speed difference in near-matched "
             "training resets; an absolute difference below "
             f"{NEAR_MATCHED_SPEED_MIN_ABS_DELTA} m/s is excluded."
+        ),
+    )
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=CHECKPOINT_INTERVAL_STEPS,
+        help="Policy steps between development checkpoints.",
+    )
+    parser.add_argument(
+        "--no-model-selection",
+        action="store_true",
+        help=(
+            "Skip the eligibility gate and keep the final checkpoint. "
+            "For code smokes only; maintained runs must use selection."
         ),
     )
     return parser
@@ -1167,6 +1189,7 @@ def train_agents(
     total_timesteps: int,
     config: ExperimentConfig,
     verbose: int,
+    checkpoint_every: int = CHECKPOINT_INTERVAL_STEPS,
 ) -> None:
     require_highway_deps(include_training=True)
     from stable_baselines3.common.logger import configure
@@ -1174,8 +1197,10 @@ def train_agents(
 
     dqn_class = dqn_class_for_variant(config.dqn_variant)
     models_dir = output_dir / "models"
+    checkpoint_dir = models_dir / "checkpoints"
     logs_dir = output_dir / "training_logs"
     models_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_dir.mkdir(parents=True, exist_ok=True)
     logs_dir.mkdir(parents=True, exist_ok=True)
     rows: list[dict[str, Any]] = []
     scenario_rows: list[dict[str, Any]] = []
@@ -1210,7 +1235,18 @@ def train_agents(
             verbose=verbose,
         )
         model.set_logger(configure(str(agent_logs_dir), ["stdout", "csv"]))
-        model.learn(total_timesteps=total_timesteps, progress_bar=False)
+        model.learn(
+            total_timesteps=total_timesteps,
+            progress_bar=False,
+            callback=CheckpointSaver(
+                agent=agent,
+                checkpoint_dir=checkpoint_dir,
+                checkpoint_every=checkpoint_every,
+                verbose=verbose,
+            ),
+        )
+        # The final checkpoint is the provisional policy. Model selection
+        # overwrites this archive with the latest eligible checkpoint.
         model_path = models_dir / f"{agent}_main.zip"
         model.save(model_path)
         training_variant_counts = dict(
@@ -1232,6 +1268,7 @@ def train_agents(
                 "monitor_path": str(agent_logs_dir / "monitor.csv"),
                 "progress_path": str(agent_logs_dir / "progress.csv"),
                 "total_timesteps": total_timesteps,
+                "checkpoint_every": checkpoint_every,
                 "seed": config.seed,
                 **{
                     f"base_reward_{key}": value
@@ -1284,6 +1321,90 @@ def train_agents(
         )
     write_csv_rows(output_dir / "training_runs.csv", rows)
     write_csv_rows(output_dir / "training_scenarios.csv", scenario_rows)
+
+
+def development_gate_outcomes(
+    model: Any,
+    agent: str,
+    num_exposures: int,
+    config: ExperimentConfig,
+) -> dict[str, Any]:
+    """Evaluate one policy on the development grid under every gate variant."""
+
+    specs = make_eval_specs(num_exposures, config)
+    models = {agent: model}
+    outcomes: dict[str, Any] = {}
+    for variant in GATE_VARIANTS:
+        step_rows, exposure_rows = rollout_counterfactual_variant(
+            models,
+            [agent],
+            specs,
+            config,
+            variant,
+        )
+        result = run_pipeline(
+            step_rows,
+            exposure_rows,
+            AnalysisConfig(bootstrap_samples=0),
+            SLOWDOWN_ONSET_TARGET,
+        )
+        outcomes[variant] = variant_outcome(
+            result.episode_outcomes,
+            agent,
+            config.policy_step_seconds,
+        )
+    return outcomes
+
+
+def select_models(
+    output_dir: Path,
+    agents: Sequence[str],
+    num_exposures: int,
+    config: ExperimentConfig,
+) -> list[dict[str, Any]]:
+    """Replace each `{agent}_main.zip` with its latest eligible checkpoint."""
+
+    require_highway_deps(include_training=True)
+    import shutil
+
+    dqn_class = dqn_class_for_variant(config.dqn_variant)
+    models_dir = output_dir / "models"
+    checkpoint_dir = models_dir / "checkpoints"
+    records: list[dict[str, Any]] = []
+    unselected: list[str] = []
+
+    for agent in agents:
+        checkpoints = available_checkpoints(checkpoint_dir, agent)
+
+        def evaluate(path: Path, agent: str = agent) -> dict[str, Any]:
+            print(f"Gating {agent} checkpoint {path.name}", flush=True)
+            return development_gate_outcomes(
+                dqn_class.load(path),
+                agent,
+                num_exposures,
+                config,
+            )
+
+        selected, agent_records = select_latest_eligible_checkpoint(
+            agent,
+            checkpoints,
+            evaluate,
+        )
+        records.extend(agent_records)
+        if selected is None:
+            unselected.append(agent)
+            continue
+        step, path = selected
+        shutil.copyfile(path, models_dir / f"{agent}_main.zip")
+        print(f"Selected {agent} checkpoint at step {step}", flush=True)
+
+    write_csv_rows(output_dir / "model_selection.csv", records)
+    if unselected:
+        raise RuntimeError(
+            "No checkpoint passed the eligibility gate for: "
+            f"{sorted(unselected)}. See model_selection.csv."
+        )
+    return records
 
 
 def evaluate_agents(
@@ -2225,7 +2346,18 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(raw_args)
     config = config_from_args(args)
     output_dir = Path(args.out)
-    train_agents(output_dir, args.agents, args.timesteps, config, args.verbose)
+    train_agents(
+        output_dir,
+        args.agents,
+        args.timesteps,
+        config,
+        args.verbose,
+        checkpoint_every=args.checkpoint_every,
+    )
+    if args.no_model_selection:
+        print("Model selection skipped; using the final checkpoint.", flush=True)
+    else:
+        select_models(output_dir, args.agents, args.num_exposures, config)
     steps, exposures = evaluate_agents(output_dir, args.agents, args.num_exposures, config)
     result = write_analysis(
         output_dir,
