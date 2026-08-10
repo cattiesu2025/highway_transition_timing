@@ -14,7 +14,7 @@ from .constants import (
     AGENTS,
     CENSORED_PAIR,
     NO_ONSET_CENSORED,
-    PRIMARY_TARGET,
+    SLOWDOWN_ONSET_TARGET,
     TERMINAL_FAILURE,
     TERMINAL_FAILURE_PAIR,
     VALID_ONSET,
@@ -27,7 +27,7 @@ def compute_timing_gaps(
     outcome_rows: Sequence[Mapping[str, Any]],
     exposure_rows: Sequence[Mapping[str, Any]] | None = None,
     agent_pairs: Sequence[tuple[str, str]] | None = None,
-    analysis_target: str = PRIMARY_TARGET,
+    analysis_target: str = SLOWDOWN_ONSET_TARGET,
 ) -> list[dict[str, Any]]:
     """Compute paired timing gaps within matched exposure/rollout blocks."""
 
@@ -114,7 +114,7 @@ def summarize_gaps(
     grouped: dict[tuple[str, str, str], list[Mapping[str, Any]]] = defaultdict(list)
     for row in gap_rows:
         key = (
-            get_str(row, "analysis_target", PRIMARY_TARGET),
+            get_str(row, "analysis_target", SLOWDOWN_ONSET_TARGET),
             get_str(row, "agent_a"),
             get_str(row, "agent_b"),
         )
@@ -159,7 +159,7 @@ def summarize_gaps(
 
 def summarize_outcomes(
     outcome_rows: Sequence[Mapping[str, Any]],
-    analysis_target: str = PRIMARY_TARGET,
+    analysis_target: str = SLOWDOWN_ONSET_TARGET,
 ) -> list[dict[str, Any]]:
     """Count rollout outcomes by agent condition."""
 
@@ -195,7 +195,7 @@ def summarize_outcomes(
 
 def latency_rank_counts(
     outcome_rows: Sequence[Mapping[str, Any]],
-    analysis_target: str = PRIMARY_TARGET,
+    analysis_target: str = SLOWDOWN_ONSET_TARGET,
 ) -> list[dict[str, Any]]:
     """Count which agent transitions first/second/last within valid exposure blocks."""
 

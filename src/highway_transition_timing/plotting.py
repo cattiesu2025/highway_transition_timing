@@ -10,30 +10,18 @@ from pathlib import Path
 from typing import Any
 
 from .constants import (
-    HIGH_SPEED_CRUISE,
-    LANE_KEEPING_CRUISE,
     NO_ONSET_CENSORED,
     TERMINAL_FAILURE,
-    TRAFFIC_SPACING_ADJUSTMENT,
     VALID_ONSET,
     VALID_PAIR,
 )
-from .transitions import run_length_segments
 from .utils import get_float, get_int, get_str
-
-MODE_COLORS = {
-    LANE_KEEPING_CRUISE: "#4C78A8",
-    HIGH_SPEED_CRUISE: "#F58518",
-    TRAFFIC_SPACING_ADJUSTMENT: "#54A24B",
-}
 
 
 def write_optional_figures(
     output_dir: str | Path,
-    modes: Sequence[Mapping[str, Any]],
     gaps: Sequence[Mapping[str, Any]],
     outcomes: Sequence[Mapping[str, Any]],
-    exposure_id: str | None = None,
 ) -> list[Path]:
     """Write figures if matplotlib is installed; otherwise return an empty list."""
 
@@ -51,15 +39,6 @@ def write_optional_figures(
         plot_paired_timing_gaps(gaps, out / "paired_timing_gaps.png"),
         plot_outcome_stacked_bar(outcomes, out / "outcome_stacked_bar.png"),
     ]
-    timeline_exposure = exposure_id or _first_exposure_id(modes)
-    if timeline_exposure:
-        written.append(
-            plot_aligned_mode_timeline(
-                modes,
-                timeline_exposure,
-                out / f"aligned_mode_timeline_{timeline_exposure}.png",
-            )
-        )
     return [path for path in written if path is not None]
 
 
@@ -397,59 +376,3 @@ def plot_outcome_stacked_bar(
     return output
 
 
-def plot_aligned_mode_timeline(
-    mode_rows: Sequence[Mapping[str, Any]],
-    exposure_id: str,
-    output_path: str | Path,
-) -> Path | None:
-    import matplotlib.patches as mpatches
-    import matplotlib.pyplot as plt
-
-    rows = [row for row in mode_rows if get_str(row, "exposure_id") == exposure_id]
-    if not rows:
-        return None
-
-    by_agent: dict[str, list[Mapping[str, Any]]] = defaultdict(list)
-    for row in rows:
-        by_agent[get_str(row, "agent_condition")].append(row)
-
-    agents = sorted(by_agent)
-    fig, ax = plt.subplots(figsize=(8.4, 0.9 + 0.55 * len(agents)))
-    for y, agent in enumerate(agents):
-        segments = run_length_segments(by_agent[agent])
-        for segment in segments:
-            label = get_str(segment, "mode_label")
-            if label not in MODE_COLORS:
-                continue
-            start = get_int(segment, "start_t", 0)
-            width = get_int(segment, "end_t", start) - start + 1
-            ax.broken_barh(
-                [(start, width)],
-                (y - 0.32, 0.64),
-                facecolors=MODE_COLORS[label],
-                edgecolors="white",
-                linewidth=0.7,
-            )
-    ax.set_yticks(range(len(agents)), agents)
-    ax.set_xlabel("timestep after exposure")
-    ax.set_title(f"Aligned Mode Timeline: {exposure_id}")
-    ax.set_ylim(-0.7, len(agents) - 0.3)
-    ax.grid(axis="x", alpha=0.25)
-    handles = [
-        mpatches.Patch(color=color, label=label)
-        for label, color in MODE_COLORS.items()
-    ]
-    ax.legend(handles=handles, frameon=False, loc="upper right")
-    fig.tight_layout()
-    output = Path(output_path)
-    fig.savefig(output, dpi=180)
-    plt.close(fig)
-    return output
-
-
-def _first_exposure_id(mode_rows: Sequence[Mapping[str, Any]]) -> str:
-    for row in mode_rows:
-        exposure_id = get_str(row, "exposure_id")
-        if exposure_id:
-            return exposure_id
-    return ""

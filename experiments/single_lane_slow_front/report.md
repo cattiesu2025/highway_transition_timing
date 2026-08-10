@@ -53,12 +53,9 @@ Semantic grounding:
 - Therefore, `valid slowdown onset` means the analysis found the first stable
   slowdown segment in a rollout.
 
-The broader multi-lane pipeline also includes rule-based behaviour modes:
-`lane_keeping_cruise`, `high_speed_cruise`, and
-`traffic_spacing_adjustment`. Those modes combine action, speed change, lane
-change, front distance, and neighbourhood-distance features. In the current
-single-lane report, however, the headline result uses the simpler and more
-transparent longitudinal action semantics.
+Both maintained experiments define onsets this way, from observable action
+semantics: `slowdown_onset` here, and `lane_change_onset` (confirmed by a
+realised lane-index change) in the multi-lane setting.
 
 Training used Double DQN with 20,000 timesteps per agent. The three agents
 shared the same environment, action space, and training distribution; they

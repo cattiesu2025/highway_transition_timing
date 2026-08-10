@@ -1997,12 +1997,6 @@ def exposure_row_from_spec(env, spec: SingleLaneSpec) -> dict[str, Any]:
 
 def add_analysis_seconds(result: PipelineResult, config: ExperimentConfig) -> None:
     step_seconds = config.policy_step_seconds
-    for row in result.transitions:
-        for key in ("onset_t", "confirmation_t", "response_latency"):
-            row[f"{key}_seconds"] = seconds_from_policy_steps(
-                row.get(key),
-                step_seconds,
-            )
     for row in result.episode_outcomes:
         for key in ("termination_t", "response_latency", "censoring_time"):
             row[f"{key}_seconds"] = seconds_from_policy_steps(
@@ -2059,7 +2053,6 @@ def write_analysis(
     if figures:
         write_optional_figures(
             analysis_dir,
-            result.modes,
             result.timing_gaps,
             result.episode_outcomes,
         )
@@ -2073,8 +2066,6 @@ def print_summary(result: PipelineResult, output_dir: Path) -> None:
     print(
         "Rows: "
         f"steps={len(result.steps)}, "
-        f"modes={len(result.modes)}, "
-        f"transitions={len(result.transitions)}, "
         f"outcomes={len(result.episode_outcomes)}, "
         f"gaps={len(result.timing_gaps)}"
     )

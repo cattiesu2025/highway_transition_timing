@@ -1572,7 +1572,6 @@ def write_analysis(
     if figures:
         write_optional_figures(
             analysis_dir,
-            result.modes,
             result.timing_gaps,
             result.episode_outcomes,
         )
@@ -1765,8 +1764,6 @@ def print_summary(result: PipelineResult, output_dir: Path) -> None:
     print(
         "Rows: "
         f"steps={len(result.steps)}, "
-        f"modes={len(result.modes)}, "
-        f"transitions={len(result.transitions)}, "
         f"outcomes={len(result.episode_outcomes)}, "
         f"gaps={len(result.timing_gaps)}"
     )

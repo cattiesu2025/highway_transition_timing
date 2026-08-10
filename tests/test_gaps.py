@@ -37,7 +37,7 @@ class GapTests(unittest.TestCase):
     def test_gap_summary_median(self):
         gaps = [
             {
-                "analysis_target": "first_stable_transition_after_exposure",
+                "analysis_target": "slowdown_onset",
                 "agent_a": "FD",
                 "agent_b": "SP",
                 "gap_status": VALID_PAIR,
@@ -61,7 +61,7 @@ def _outcome(agent, exposure_id, outcome, latency):
         "exposure_id": exposure_id,
         "rollout_id": "r0",
         "rollout_seed": "0",
-        "analysis_target": "first_stable_transition_after_exposure",
+        "analysis_target": "slowdown_onset",
         "episode_outcome": outcome,
         "response_latency": latency,
     }
