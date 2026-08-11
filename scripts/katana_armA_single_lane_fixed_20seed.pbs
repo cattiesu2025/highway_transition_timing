@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# Arm A: single-lane retraining on the corrected difficulty bands and
+# evaluation grid. Scenario families, reward weights, hyperparameters, the
+# checkpoint-gated selection protocol, and the 100,000 step budget are all
+# unchanged from the completed selected_100k runs. What changed is that the
+# gradual cell moved from TTC (20, 30] to (16, 20] so every positive cell can
+# reach contact inside the 20 s episode, and the evaluation grid moved from
+# 90/120/150/180 m to 150/165/180/195 m so it sits above the measured onset
+# thresholds and inside the 200 m observation clip.
+#
+# Seeds are a new block so the completed 3000-3019 runs stay intact as
+# superseded evidence. The sealed held-out grid is never loaded here.
+
+#PBS -N armA-single
+#PBS -J 0-19
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR}"
+
+module load python/3.11.3
+
+VENV_DIR="/srv/scratch/${USER}/venvs/highway-transition"
+if [[ ! -f "${VENV_DIR}/bin/activate" ]]; then
+  echo "Missing Python environment: ${VENV_DIR}" >&2
+  exit 1
+fi
+source "${VENV_DIR}/bin/activate"
+
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export MPLCONFIGDIR="${TMPDIR}/matplotlib"
+export XDG_CACHE_HOME="${TMPDIR}/cache"
+mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
+
+python3 -c \
+  "import gymnasium, highway_env, stable_baselines3, torch; print(f'Python environment OK: torch={torch.__version__}, cuda={torch.cuda.is_available()}')"
+
+RUN_SEED=$((3100 + PBS_ARRAY_INDEX))
+RUN_NAME="single_lane_slow_front_fixed_100k_seed${RUN_SEED}"
+
+OUTPUT_ROOT="/srv/scratch/${USER}/highway_transition_timing/outputs"
+RUN_DIR="${OUTPUT_ROOT}/${RUN_NAME}"
+mkdir -p "${RUN_DIR}"
+
+python3 experiments/single_lane_slow_front/run.py audit \
+  --out "${RUN_DIR}/training_scenario_audit" \
+  --num-resets 2000 \
+  --duration 20 \
+  --evaluation-duration 120 \
+  --seed "${RUN_SEED}" \
+  --training-scenario-profile stratified \
+  --near-matched-speed-delta 2.0
+
+python3 experiments/single_lane_slow_front/run.py \
+  --out "${RUN_DIR}" \
+  --agents FD BAL SP \
+  --timesteps 100000 \
+  --checkpoint-every 5000 \
+  --num-exposures 36 \
+  --duration 20 \
+  --evaluation-duration 120 \
+  --seed "${RUN_SEED}" \
+  --learning-rate 0.0005 \
+  --training-scenario-profile stratified \
+  --near-matched-speed-delta 2.0 \
+  --reward-strength-multiplier 1 \
+  --collision-risk-penalty 3.0 \
+  --bootstrap-samples 500 \
+  --verbose 0
+
+for agent in FD BAL SP; do
+  MODEL_PATH="${RUN_DIR}/models/${agent}_main.zip"
+  if [[ ! -f "${MODEL_PATH}" ]]; then
+    echo "Missing selected model: ${MODEL_PATH}" >&2
+    exit 1
+  fi
+done
+
+if [[ ! -f "${RUN_DIR}/model_selection.csv" ]]; then
+  echo "Missing selection record: ${RUN_DIR}/model_selection.csv" >&2
+  exit 1
+fi
+
+echo "Completed ${RUN_NAME}: arm=A bands=corrected grid=150-195 heldout=unopened"

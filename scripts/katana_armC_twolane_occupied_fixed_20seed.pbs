@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# Arm C: two-lane retraining with the target lane occupied at 29 m/s, matched
+# to the ego target speed so that changing lanes costs spacing rather than
+# speed. With an empty target lane a lane change maximises the speed and the
+# front-distance terms at once, so the FD and SP preferences point at the same
+# action and cannot disagree; this arm rebuilds the opposition on the distance
+# axis, where the weights differ most.
+#
+# The evaluation grid sweeps the merge gap over 15/40/70 m, which straddles the
+# switching gaps predicted from the frozen weights, near 19 m for BAL and near
+# 64 m for FD. Training draws the gap across 10-90 m so the policy is not
+# fitted to the three evaluated levels.
+#
+# Arms B and C differ in one variable, the target-lane occupancy. Walltime is
+# raised because a merged vehicle makes gate rejections and checkpoint
+# walk-backs more likely. The sealed held-out grid is never loaded here.
+
+#PBS -N armC-2lane-occ
+#PBS -J 0-19
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=07:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR}"
+
+module load python/3.11.3
+
+VENV_DIR="/srv/scratch/${USER}/venvs/highway-transition"
+if [[ ! -f "${VENV_DIR}/bin/activate" ]]; then
+  echo "Missing Python environment: ${VENV_DIR}" >&2
+  exit 1
+fi
+source "${VENV_DIR}/bin/activate"
+
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export MPLCONFIGDIR="${TMPDIR}/matplotlib"
+export XDG_CACHE_HOME="${TMPDIR}/cache"
+mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
+
+python3 -c \
+  "import gymnasium, highway_env, stable_baselines3, torch; print(f'Python environment OK: torch={torch.__version__}, cuda={torch.cuda.is_available()}')"
+
+RUN_SEED=$((4200 + PBS_ARRAY_INDEX))
+RUN_NAME="multilane_twolane_occupied_fixed_100k_seed${RUN_SEED}"
+
+OUTPUT_ROOT="/srv/scratch/${USER}/highway_transition_timing/outputs"
+RUN_DIR="${OUTPUT_ROOT}/${RUN_NAME}"
+mkdir -p "${RUN_DIR}"
+
+python3 experiments/multilane_open_lane_change/run.py audit \
+  --out "${RUN_DIR}/training_scenario_audit" \
+  --num-resets 2000 \
+  --duration 20 \
+  --evaluation-duration 120 \
+  --seed "${RUN_SEED}" \
+  --lanes-count 2 \
+  --ego-lane 1 \
+  --target-lane-vehicle \
+  --training-scenario-profile stratified \
+  --near-matched-speed-delta 2.0
+
+python3 experiments/multilane_open_lane_change/run.py \
+  --out "${RUN_DIR}" \
+  --agents FD BAL SP \
+  --timesteps 100000 \
+  --checkpoint-every 5000 \
+  --num-exposures 36 \
+  --duration 20 \
+  --evaluation-duration 120 \
+  --seed "${RUN_SEED}" \
+  --lanes-count 2 \
+  --ego-lane 1 \
+  --target-lane-vehicle \
+  --learning-rate 0.0005 \
+  --training-scenario-profile stratified \
+  --near-matched-speed-delta 2.0 \
+  --lane-change-penalty 0.2 \
+  --slow-down-penalty 0.2 \
+  --collision-risk-penalty 3.0 \
+  --bootstrap-samples 500 \
+  --verbose 0 \
+  --no-figures
+
+for agent in FD BAL SP; do
+  MODEL_PATH="${RUN_DIR}/models/${agent}_main.zip"
+  if [[ ! -f "${MODEL_PATH}" ]]; then
+    echo "Missing selected model: ${MODEL_PATH}" >&2
+    exit 1
+  fi
+done
+
+if [[ ! -f "${RUN_DIR}/model_selection.csv" ]]; then
+  echo "Missing selection record: ${RUN_DIR}/model_selection.csv" >&2
+  exit 1
+fi
+
+echo "Completed ${RUN_NAME}: arm=C lanes=2 target_lane=occupied merge_gaps=15/40/70 heldout=unopened"
