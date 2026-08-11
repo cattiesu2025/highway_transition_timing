@@ -35,7 +35,7 @@ def test_eval_specs_are_open_lane_slow_front_only():
     assert len(specs) == 6
     assert {spec.scenario_type for spec in specs} == {"open_lane_slow_front"}
     assert {spec.ego_lane for spec in specs} == {1}
-    assert all(spec.front_distance >= 140.0 for spec in specs)
+    assert all(spec.front_distance >= 150.0 for spec in specs)
 
 
 def test_eval_specs_cover_full_factorial_grid_before_repeating():
@@ -52,10 +52,10 @@ def test_eval_specs_cover_full_factorial_grid_before_repeating():
     assert len(combinations) == 36
     assert {spec.ego_speed for spec in first_cycle} == {26.0, 28.0, 30.0}
     assert {spec.front_distance for spec in first_cycle} == {
-        140.0,
+        150.0,
+        165.0,
         180.0,
-        220.0,
-        260.0,
+        195.0,
     }
     assert {spec.front_speed for spec in first_cycle} == {10.0, 14.0, 18.0}
     assert (
@@ -204,12 +204,12 @@ def test_training_controls_and_visibility_are_physically_labelled():
     assert all(spec.ttc_bin == "non_closing" for spec in non_closing)
     assert all(spec.required_deceleration_bin == "none" for spec in non_closing)
     assert all(spec.closing_speed > 0.0 for spec in near_closing)
-    assert all(spec.ttc_bin == "gradual" for spec in near_closing)
+    assert all(spec.ttc_bin == "beyond_horizon" for spec in near_closing)
     assert all(
         spec.visible_at_t0
         for spec in near_closing + non_closing + exact_matched + boundary_visible
     )
-    assert all(spec.ttc_bin == "gradual" for spec in boundary_visible)
+    assert all(spec.ttc_bin == "beyond_horizon" for spec in boundary_visible)
     assert all(
         spec.required_deceleration_bin == "gentle"
         for spec in boundary_visible

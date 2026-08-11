@@ -62,10 +62,10 @@ def test_eval_specs_cover_full_factorial_grid_before_repeating():
     assert len(combinations) == 36
     assert {spec.ego_speed for spec in first_cycle} == {26.0, 28.0, 30.0}
     assert {spec.front_distance for spec in first_cycle} == {
-        90.0,
-        120.0,
         150.0,
+        165.0,
         180.0,
+        195.0,
     }
     assert {spec.front_speed for spec in first_cycle} == {10.0, 14.0, 18.0}
     assert (

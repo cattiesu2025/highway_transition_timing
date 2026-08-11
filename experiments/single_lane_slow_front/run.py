@@ -86,8 +86,8 @@ STRATIFIED_TRAINING_BLOCK = (
     ("train_non_closing_front", "non_closing", "none"),
     ("train_non_closing_front", "non_closing", "none"),
     ("train_non_closing_front", "non_closing", "none"),
-    ("train_near_closing_front", "gradual", "gentle"),
-    ("train_near_closing_front", "gradual", "gentle"),
+    ("train_near_closing_front", "beyond_horizon", "gentle"),
+    ("train_near_closing_front", "beyond_horizon", "gentle"),
     ("train_visible_slow_front", "gradual", "gentle"),
     ("train_visible_slow_front", "gradual", "gentle"),
     ("train_visible_slow_front", "easy", "gentle"),
@@ -96,12 +96,14 @@ STRATIFIED_TRAINING_BLOCK = (
     ("train_visible_slow_front", "medium", "moderate"),
     ("train_visible_slow_front", "hard", "strong"),
     ("train_visible_slow_front", "hard", "strong"),
-    ("train_delayed_visible_front", "gradual", "gentle"),
-    ("train_delayed_visible_front", "gradual", "gentle"),
+    ("train_delayed_visible_front", "beyond_horizon", "gentle"),
+    ("train_delayed_visible_front", "beyond_horizon", "gentle"),
 )
 VISIBLE_DIFFICULTY_CELLS = {
-    ("gradual", "gentle"): ((20.001, 30.0), (0.10, 0.25)),
-    ("easy", "gentle"): ((12.001, 20.0), (0.20, 0.499)),
+    # Every cell lies inside the 20 s training episode, so the contact that
+    # defines a cell can occur in the episode that trains on it.
+    ("gradual", "gentle"): ((16.001, 20.0), (0.10, 0.25)),
+    ("easy", "gentle"): ((12.001, 16.0), (0.20, 0.499)),
     ("medium", "moderate"): ((8.001, 12.0), (0.50, 0.999)),
     ("hard", "strong"): ((5.001, 8.0), (1.00, 1.999)),
 }
@@ -672,6 +674,10 @@ def classify_ttc(ttc_seconds: float, closing_speed: float) -> str:
     if closing_speed <= 0.0:
         return "non_closing"
     if ttc_seconds > 20.0:
+        # Beyond the 20 s training episode: a reporting bin with no training
+        # cell mapped to it.
+        return "beyond_horizon"
+    if ttc_seconds > 16.0:
         return "gradual"
     if ttc_seconds > 12.0:
         return "easy"
@@ -757,7 +763,7 @@ def build_single_lane_spec(
 
 
 def make_eval_specs(num_exposures: int, config: ExperimentConfig) -> list[SingleLaneSpec]:
-    front_distances = [90.0, 120.0, 150.0, 180.0]
+    front_distances = [150.0, 165.0, 180.0, 195.0]
     front_speeds = [10.0, 14.0, 18.0]
     ego_speeds = [26.0, 28.0, 30.0]
     specs: list[SingleLaneSpec] = []
@@ -933,7 +939,7 @@ def sample_delayed_visible_training_spec(
             scenario_type="train_delayed_visible_front",
             include_front_vehicle=True,
         )
-        if spec.ttc_bin == "gradual" and spec.required_deceleration_bin == "gentle":
+        if spec.ttc_bin == "beyond_horizon" and spec.required_deceleration_bin == "gentle":
             return spec
     raise RuntimeError("Unable to sample feasible delayed-visible slow-front scene")
 
