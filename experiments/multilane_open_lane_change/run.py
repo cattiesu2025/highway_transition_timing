@@ -17,7 +17,7 @@ import random
 import sys
 from collections import Counter
 from collections.abc import Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any, Callable
 
@@ -75,6 +75,13 @@ OBSERVATION_DISTANCE_METRES = 200.0
 VISIBLE_TRAIN_DISTANCE_RANGE = (90.0, 195.0)
 BOUNDARY_VISIBLE_TRAIN_DISTANCE_RANGE = (180.0, 195.0)
 SLOW_FRONT_SPEED_RANGE = (10.0, 20.0)
+# Arm C: a vehicle in the target lane turns the lane change from a free lunch
+# into a trade. Its speed is matched to the ego target so the trade sits on the
+# distance axis alone, where the FD/BAL/SP weights differ most.
+TARGET_LANE_SPEED = 29.0
+TARGET_LANE_MERGE_GAPS = (15.0, 40.0, 70.0)
+TARGET_LANE_TRAIN_GAP_RANGE = (10.0, 90.0)
+TARGET_LANE_SPEC_SEED_OFFSET = 900_000
 EGO_SPEED_RANGE = (24.0, 31.0)
 STRATIFIED_TRAINING_BLOCK = (
     ("train_no_front", "", ""),
@@ -120,6 +127,8 @@ class ExperimentConfig:
     lanes_count: int = 2
     ego_lane: int = 1
     policy_frequency: int = 5
+    target_lane_vehicle: bool = False
+    target_lane_speed: float = TARGET_LANE_SPEED
     simulation_frequency: int = 15
     observation_normalize: bool = True
     observation_absolute: bool = False
@@ -196,6 +205,7 @@ class OpenLaneSpec:
     ttc_bin: str = ""
     required_deceleration_bin: str = ""
     visible_at_t0: bool = True
+    target_lane_gap: float | None = None
 
     @property
     def net_distance(self) -> float:
@@ -327,6 +337,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--lanes-count", type=int, default=2)
+    parser.add_argument("--target-lane-vehicle", action="store_true")
     parser.add_argument("--ego-lane", type=int, default=1)
     parser.add_argument("--bootstrap-samples", type=int, default=500)
     parser.add_argument("--verbose", type=int, default=1)
@@ -389,6 +400,7 @@ def build_audit_parser() -> argparse.ArgumentParser:
     parser.add_argument("--evaluation-duration", type=int, default=120)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--lanes-count", type=int, default=2)
+    parser.add_argument("--target-lane-vehicle", action="store_true")
     parser.add_argument("--ego-lane", type=int, default=1)
     parser.add_argument(
         "--training-scenario-profile",
@@ -406,6 +418,7 @@ def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
         evaluation_duration=args.evaluation_duration,
         seed=args.seed,
         lanes_count=args.lanes_count,
+        target_lane_vehicle=args.target_lane_vehicle,
         ego_lane=args.ego_lane,
         observation_normalize=not args.no_normalize_observation,
         observation_absolute=args.absolute_observation,
@@ -442,6 +455,7 @@ def make_env(agent_condition: str, config: ExperimentConfig, training: bool = Fa
                 "lateral": True,
             },
             "lanes_count": config.lanes_count,
+            "target_lane_vehicle": config.target_lane_vehicle,
             "vehicles_count": 1,
             "vehicles_density": 1.0,
             "duration": config.duration if training else config.evaluation_duration,
@@ -515,6 +529,7 @@ def build_open_lane_spec(
     ego_lane: int,
     ego_longitudinal: float = 100.0,
     exposure_t: int = 0,
+    target_lane_gap: float | None = None,
 ) -> OpenLaneSpec:
     rounded_ego_speed = round(float(ego_speed), 3)
     rounded_front_distance = round(float(front_distance), 3)
@@ -562,13 +577,23 @@ def build_open_lane_spec(
             include_front_vehicle
             and rounded_front_distance < OBSERVATION_DISTANCE_METRES
         ),
+        target_lane_gap=target_lane_gap,
     )
 
 
 def make_training_spec(reset_index: int, config: ExperimentConfig) -> OpenLaneSpec:
     if config.training_scenario_profile == "legacy-random":
-        return make_legacy_random_training_spec(reset_index, config)
-    return make_stratified_training_spec(reset_index, config)
+        spec = make_legacy_random_training_spec(reset_index, config)
+    else:
+        spec = make_stratified_training_spec(reset_index, config)
+    if not config.target_lane_vehicle or not spec.include_front_vehicle:
+        return spec
+    # Arm C trains on the same trade it is evaluated on, so the target lane is
+    # occupied here too. The gap is drawn across the whole evaluated sweep
+    # rather than from its three levels, so the policy is not fitted to the grid.
+    rng = random.Random(config.seed + TARGET_LANE_SPEC_SEED_OFFSET + reset_index)
+    gap = rng.uniform(*TARGET_LANE_TRAIN_GAP_RANGE)
+    return replace(spec, target_lane_gap=round(gap, 3))
 
 
 def make_stratified_training_spec(
@@ -945,22 +970,29 @@ def validate_stratified_training_specs(
 def make_eval_specs(num_exposures: int, config: ExperimentConfig) -> list[OpenLaneSpec]:
     front_distances = [150.0, 165.0, 180.0, 195.0]
     front_speeds = [10.0, 14.0, 18.0]
-    ego_speeds = [26.0, 28.0, 30.0]
+    third_axis = (
+        list(TARGET_LANE_MERGE_GAPS) if config.target_lane_vehicle else [26.0, 28.0, 30.0]
+    )
     specs: list[OpenLaneSpec] = []
     for idx in range(num_exposures):
+        third = third_axis[
+            (idx // (len(front_distances) * len(front_speeds))) % len(third_axis)
+        ]
         specs.append(
             build_open_lane_spec(
                 exposure_id=f"M{idx:04d}",
                 exposure_seed=config.seed + idx,
                 ego_lane=config.ego_lane,
-                ego_speed=ego_speeds[
-                    (idx // (len(front_distances) * len(front_speeds)))
-                    % len(ego_speeds)
-                ],
+                ego_speed=28.0 if config.target_lane_vehicle else third,
                 front_distance=front_distances[idx % len(front_distances)],
                 front_speed=front_speeds[(idx // len(front_distances)) % len(front_speeds)],
-                scenario_type="open_lane_slow_front",
+                scenario_type=(
+                    "occupied_lane_slow_front"
+                    if config.target_lane_vehicle
+                    else "open_lane_slow_front"
+                ),
                 include_front_vehicle=True,
+                target_lane_gap=third if config.target_lane_vehicle else None,
             )
         )
     return specs
@@ -1111,6 +1143,21 @@ def apply_open_lane_scene(
             enable_lane_change=False,
         )
         vehicles.append(lead)
+    if spec.target_lane_gap is not None:
+        target_lane_index = lane_index_for(spec.ego_lane - 1)
+        target_lane = road.network.get_lane(target_lane_index)
+        longitudinal = spec.ego_longitudinal + float(spec.target_lane_gap)
+        vehicles.append(
+            IDMVehicle(
+                road,
+                target_lane.position(longitudinal, 0),
+                target_lane.heading_at(longitudinal),
+                TARGET_LANE_SPEED,
+                target_lane_index=target_lane_index,
+                target_speed=TARGET_LANE_SPEED,
+                enable_lane_change=False,
+            )
+        )
     road.vehicles = vehicles
     unwrapped.vehicle = ego
     unwrapped.controlled_vehicles = [ego]
@@ -1232,6 +1279,8 @@ def train_agents(
                 else "",
                 "experiment": "multilane_open_lane_change",
                 "lanes_count": config.lanes_count,
+                "target_lane_vehicle": config.target_lane_vehicle,
+                "target_lane_speed": TARGET_LANE_SPEED,
                 "ego_lane": config.ego_lane,
                 "training_duration_seconds": config.duration,
                 "evaluation_duration_seconds": config.evaluation_duration,
@@ -1503,6 +1552,8 @@ def exposure_row_from_spec(
                 "blockers": "none",
                 "background_vehicles": 0,
                 "lanes_count": config.lanes_count,
+                "target_lane_vehicle": config.target_lane_vehicle,
+                "target_lane_speed": TARGET_LANE_SPEED,
             }
         ),
         "exposure_source": "multilane_open_lane_change",
@@ -1795,6 +1846,7 @@ def main(argv: list[str] | None = None) -> int:
             evaluation_duration=args.evaluation_duration,
             seed=args.seed,
             lanes_count=args.lanes_count,
+            target_lane_vehicle=args.target_lane_vehicle,
             ego_lane=args.ego_lane,
             training_scenario_profile=args.training_scenario_profile,
             no_front_train_fraction=args.no_front_train_fraction,
