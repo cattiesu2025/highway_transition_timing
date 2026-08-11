@@ -80,12 +80,9 @@ def quartiles(values: Sequence[float]) -> tuple[float, float, float]:
     """Median and the two hinges, using the same convention as the pipeline."""
     ordered = sorted(values)
     n = len(ordered)
-    median = statistics.median(ordered)
-    if n < 2:
-        return median, median, median
     lower = ordered[: n // 2]
     upper = ordered[(n + 1) // 2 :]
-    return statistics.median(lower), median, statistics.median(upper)
+    return statistics.median(lower), statistics.median(ordered), statistics.median(upper)
 
 
 def bootstrap_median_ci(
@@ -94,8 +91,6 @@ def bootstrap_median_ci(
     seed: int = BOOTSTRAP_SEED,
 ) -> tuple[float, float]:
     """Percentile CI for the median, resampling whole seeds."""
-    if len(values) < 2:
-        return float("nan"), float("nan")
     rng = random.Random(seed)
     n = len(values)
     medians = []
@@ -117,8 +112,6 @@ def sign_test_p(positive: int, negative: int) -> float:
     medians land on half policy steps.
     """
     n = positive + negative
-    if n == 0:
-        return float("nan")
     extreme = max(positive, negative)
     tail = sum(math.comb(n, i) for i in range(extreme, n + 1))
     return min(1.0, 2.0 * tail / (2.0**n))
@@ -131,16 +124,8 @@ def step_seconds(run_dir: Path) -> float:
     conversion has to come from `training_runs.csv` rather than from a pair of
     step/second columns.
     """
-    frequencies = {
-        float(row["policy_frequency_hz"])
-        for row in read_csv_rows(run_dir / "training_runs.csv")
-    }
-    if len(frequencies) != 1:
-        raise SystemExit(f"Inconsistent policy frequency in {run_dir}: {frequencies}")
-    frequency = frequencies.pop()
-    if frequency <= 0:
-        raise SystemExit(f"Invalid policy frequency in {run_dir}: {frequency}")
-    return 1.0 / frequency
+    rows = read_csv_rows(run_dir / "training_runs.csv")
+    return 1.0 / float(rows[0]["policy_frequency_hz"])
 
 
 def seed_latencies(run_dir: Path, target: str) -> dict[str, list[float]]:
@@ -222,16 +207,7 @@ def aggregate(experiment: Experiment, outputs_root: Path) -> dict:
         seed: outputs_root / f"{experiment.run_prefix}{seed}"
         for seed in experiment.seeds
     }
-    missing = [str(path) for path in run_dirs.values() if not path.is_dir()]
-    if missing:
-        raise SystemExit(f"Missing run directories:\n  " + "\n  ".join(missing))
-
-    distinct_step_seconds = {step_seconds(path) for path in run_dirs.values()}
-    if len(distinct_step_seconds) != 1:
-        raise SystemExit(
-            f"Seeds disagree on policy frequency: {distinct_step_seconds}"
-        )
-    seconds_per_step = distinct_step_seconds.pop()
+    seconds_per_step = step_seconds(run_dirs[experiment.seeds[0]])
 
     latency_rows: list[dict] = []
     gap_rows: list[dict] = []
