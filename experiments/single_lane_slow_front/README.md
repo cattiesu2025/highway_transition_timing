@@ -49,7 +49,14 @@ Arm A uses the sealed shared A/B grid. It is loaded only when
 validated before any model inference.
 
 ```bash
-qsub scripts/katana_armA_heldout_v2.pbs
+qsub -J 0-19 scripts/katana_armA_heldout_v2.pbs
+```
+
+For a single-seed retry, pass the zero-based index without an array. For
+example, seed 3119 is:
+
+```bash
+qsub -v ARM_A_INDEX=19 scripts/katana_armA_heldout_v2.pbs
 ```
 
 Outputs are written beneath each run at

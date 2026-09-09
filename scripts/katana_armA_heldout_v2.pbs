@@ -2,7 +2,6 @@
 
 # One-time held-out v2 inference for Arm A. No training or model selection.
 #PBS -N armA-ho-v2
-#PBS -J 0-19
 #PBS -l select=1:ncpus=4:mem=16gb
 #PBS -l walltime=02:00:00
 #PBS -j oe
@@ -19,9 +18,18 @@ export PYTHONPATH="${PBS_O_WORKDIR}/src"
 export PYTHONUNBUFFERED=1
 export MPLCONFIGDIR="${TMPDIR}/matplotlib"
 export XDG_CACHE_HOME="${TMPDIR}/cache"
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export NUMEXPR_NUM_THREADS=1
 mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
 
-RUN_SEED=$((3100 + PBS_ARRAY_INDEX))
+TASK_INDEX="${ARM_A_INDEX:-${PBS_ARRAY_INDEX:-}}"
+[[ "${TASK_INDEX}" =~ ^([0-9]|1[0-9])$ ]] || {
+  echo "Set ARM_A_INDEX=0..19 for one seed, or submit with -J 0-19" >&2
+  exit 2
+}
+RUN_SEED=$((3100 + TASK_INDEX))
 RUN_NAME="single_lane_slow_front_fixed_100k_seed${RUN_SEED}"
 RUN_DIR="/srv/scratch/${USER}/highway_transition_timing/outputs/${RUN_NAME}"
 OUT_DIR="${RUN_DIR}/rollout_counterfactual_heldout_v2"
@@ -32,6 +40,7 @@ for agent in FD BAL SP; do
   }
 done
 
+echo "Starting Arm A held-out v2: index=${TASK_INDEX} seed=${RUN_SEED} host=$(hostname)"
 python3 experiments/single_lane_slow_front/run.py rollout-counterfactual \
   --run-dir "${RUN_DIR}" \
   --out "${OUT_DIR}" \

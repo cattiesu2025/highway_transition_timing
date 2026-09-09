@@ -1694,10 +1694,12 @@ def evaluate_rollout_counterfactuals(
 ) -> list[dict[str, Any]]:
     require_highway_deps(include_training=True)
     dqn_class = dqn_class_for_variant(config.dqn_variant)
-    models = {
-        agent: dqn_class.load(run_dir / "models" / f"{agent}_main.zip")
-        for agent in agents
-    }
+    models = {}
+    for agent in agents:
+        model_path = run_dir / "models" / f"{agent}_main.zip"
+        print(f"Loading {agent}: {model_path}", flush=True)
+        models[agent] = dqn_class.load(model_path)
+        print(f"Loaded {agent}", flush=True)
     if eval_grid == "heldout-v2":
         specs = make_sealed_heldout_specs(config)
         grid_path = SEALED_HELDOUT_GRID_PATH
@@ -1710,6 +1712,7 @@ def evaluate_rollout_counterfactuals(
 
     output_dir.mkdir(parents=True, exist_ok=True)
     for variant in variants:
+        print(f"Starting rollout variant: {variant}", flush=True)
         steps, exposures = rollout_counterfactual_variant(
             models=models,
             agents=agents,

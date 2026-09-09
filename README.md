@@ -89,9 +89,16 @@ remaining inside the maintained training and observation support.
 Submit once on Katana:
 
 ```bash
-qsub scripts/katana_armA_heldout_v2.pbs
+qsub -J 0-19 scripts/katana_armA_heldout_v2.pbs
 qsub scripts/katana_armB_heldout_v2.pbs
 qsub scripts/katana_armC_heldout_v2.pbs
+```
+
+To retry one Arm A seed after an infrastructure-level failure without creating
+an array, pass its zero-based index explicitly. For example, seed 3119 is:
+
+```bash
+qsub -v ARM_A_INDEX=19 scripts/katana_armA_heldout_v2.pbs
 ```
 
 After all run directories are synchronized beneath local `outputs/`, validate
