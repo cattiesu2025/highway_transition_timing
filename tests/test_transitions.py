@@ -94,6 +94,30 @@ class TransitionTests(unittest.TestCase):
 
         self.assertEqual(outcomes[0]["episode_outcome"], NO_ONSET_CENSORED)
 
+    def test_lane_change_onset_ignores_opposite_direction_command(self):
+        # LANE_RIGHT from the rightmost lane is a no-op the simulator executes
+        # without moving the vehicle. Only the LANE_LEFT command that caused the
+        # realised change may date the onset.
+        config = AnalysisConfig(lane_change_confirmation_window=15)
+        actions = ["IDLE", "LANE_RIGHT", "LANE_RIGHT", "IDLE", "LANE_LEFT", "IDLE"]
+        lanes = [1, 1, 1, 1, 1, 0]
+        steps = [
+            _step("noop_right", t, action=action, ego_lane=lane)
+            for t, (action, lane) in enumerate(zip(actions, lanes, strict=True))
+        ]
+
+        outcomes = classify_episode_outcomes(
+            steps,
+            config=config,
+            analysis_target=LANE_CHANGE_ONSET_TARGET,
+        )
+
+        self.assertEqual(outcomes[0]["episode_outcome"], VALID_ONSET)
+        self.assertEqual(outcomes[0]["response_latency"], 4)
+        self.assertEqual(
+            outcomes[0]["target_record_type"], "confirmed_lane_change_onset"
+        )
+
     def test_lane_change_onset_ignores_pre_exposure_change(self):
         config = AnalysisConfig(persistence_k=3)
         steps = [

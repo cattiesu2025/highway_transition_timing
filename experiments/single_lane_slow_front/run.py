@@ -9,6 +9,8 @@ scenes with the existing transition-timing analysis pipeline.
 from __future__ import annotations
 
 import argparse
+import csv
+import hashlib
 import random
 import sys
 from collections import Counter
@@ -77,6 +79,12 @@ VISIBLE_TRAIN_DISTANCE_RANGE = (90.0, 195.0)
 DELAYED_VISIBLE_TRAIN_DISTANCE_RANGE = (205.0, 220.0)
 SLOW_FRONT_SPEED_RANGE = (10.0, 20.0)
 EGO_SPEED_RANGE = (24.0, 31.0)
+SEALED_HELDOUT_GRID_PATH = (
+    Path(__file__).parents[1] / "heldout_v2" / "arm_ab_grid.csv"
+)
+SEALED_HELDOUT_GRID_SHA256 = (
+    "094a840d57782fe63eba6604c8ac36cc45e5b1d4f5aa72d05a2cba4fe5a18caf"
+)
 STRATIFIED_TRAINING_BLOCK = (
     ("train_no_front", "", ""),
     ("train_no_front", "", ""),
@@ -508,6 +516,12 @@ def build_rollout_counterfactual_parser() -> argparse.ArgumentParser:
     parser.add_argument("--run-dir", required=True)
     parser.add_argument("--out", default=None)
     parser.add_argument("--num-exposures", type=int, default=36)
+    parser.add_argument(
+        "--eval-grid",
+        choices=("development", "heldout-v2"),
+        default="development",
+        help="Use the development grid or the checksum-sealed held-out v2 grid.",
+    )
     parser.add_argument("--agents", nargs="+", default=list(AGENTS))
     parser.add_argument("--duration", type=int, default=120, help="Duration in seconds.")
     parser.add_argument(
@@ -782,6 +796,95 @@ def make_eval_specs(num_exposures: int, config: ExperimentConfig) -> list[Single
                 include_front_vehicle=True,
             )
         )
+    return specs
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_eval_specs(
+    path: Path,
+    expected_sha256: str | None = None,
+) -> list[SingleLaneSpec]:
+    """Load a fixed single-lane grid and validate its physical support."""
+
+    if not path.exists():
+        raise FileNotFoundError(f"Evaluation grid does not exist: {path}")
+    actual_sha256 = file_sha256(path)
+    if expected_sha256 is not None and actual_sha256 != expected_sha256:
+        raise RuntimeError(
+            "Evaluation grid checksum mismatch: "
+            f"expected {expected_sha256}, got {actual_sha256}"
+        )
+    required = {
+        "exposure_id",
+        "exposure_seed",
+        "ego_speed",
+        "front_distance",
+        "front_speed",
+        "ego_lane",
+    }
+    with path.open(newline="") as handle:
+        reader = csv.DictReader(handle)
+        missing = required.difference(reader.fieldnames or [])
+        if missing:
+            raise ValueError(f"Evaluation grid is missing columns: {sorted(missing)}")
+        rows = list(reader)
+
+    specs: list[SingleLaneSpec] = []
+    for row in rows:
+        if int(row["ego_lane"]) != 1:
+            raise ValueError(f"Single-lane held-out ego_lane must be 1: {row['exposure_id']}")
+        spec = build_single_lane_spec(
+            exposure_id=str(row["exposure_id"]),
+            exposure_seed=int(row["exposure_seed"]),
+            ego_speed=float(row["ego_speed"]),
+            front_distance=float(row["front_distance"]),
+            front_speed=float(row["front_speed"]),
+            scenario_type="heldout_v2_slow_front",
+            include_front_vehicle=True,
+        )
+        if not EGO_SPEED_RANGE[0] <= spec.ego_speed <= EGO_SPEED_RANGE[1]:
+            raise ValueError(f"Held-out ego speed outside training support: {spec.exposure_id}")
+        if not VISIBLE_TRAIN_DISTANCE_RANGE[0] <= spec.front_distance <= VISIBLE_TRAIN_DISTANCE_RANGE[1]:
+            raise ValueError(f"Held-out front distance outside training support: {spec.exposure_id}")
+        if not SLOW_FRONT_SPEED_RANGE[0] <= spec.front_speed <= SLOW_FRONT_SPEED_RANGE[1]:
+            raise ValueError(f"Held-out front speed outside training support: {spec.exposure_id}")
+        if spec.ego_speed <= spec.front_speed:
+            raise ValueError(f"Held-out original must be closing: {spec.exposure_id}")
+        specs.append(spec)
+
+    if len({spec.exposure_id for spec in specs}) != len(specs):
+        raise ValueError("Evaluation grid exposure_id values must be unique")
+    if len({spec.exposure_seed for spec in specs}) != len(specs):
+        raise ValueError("Evaluation grid exposure_seed values must be unique")
+    physical = {(s.ego_speed, s.front_distance, s.front_speed) for s in specs}
+    if len(physical) != len(specs):
+        raise ValueError("Evaluation grid physical scene rows must be unique")
+    return specs
+
+
+def make_sealed_heldout_specs(config: ExperimentConfig) -> list[SingleLaneSpec]:
+    specs = load_eval_specs(
+        SEALED_HELDOUT_GRID_PATH,
+        expected_sha256=SEALED_HELDOUT_GRID_SHA256,
+    )
+    if len(specs) != 36:
+        raise RuntimeError(f"Sealed held-out grid must have 36 rows, got {len(specs)}")
+    development = make_eval_specs(36, config)
+    for field in ("ego_speed", "front_distance", "front_speed"):
+        overlap = {getattr(s, field) for s in specs} & {
+            getattr(s, field) for s in development
+        }
+        if overlap:
+            raise RuntimeError(
+                f"Sealed held-out {field} values overlap development: {sorted(overlap)}"
+            )
     return specs
 
 
@@ -1587,6 +1690,7 @@ def evaluate_rollout_counterfactuals(
     variants: Sequence[str],
     bootstrap_samples: int,
     figures: bool,
+    eval_grid: str = "development",
 ) -> list[dict[str, Any]]:
     require_highway_deps(include_training=True)
     dqn_class = dqn_class_for_variant(config.dqn_variant)
@@ -1594,7 +1698,14 @@ def evaluate_rollout_counterfactuals(
         agent: dqn_class.load(run_dir / "models" / f"{agent}_main.zip")
         for agent in agents
     }
-    specs = make_eval_specs(num_exposures, config)
+    if eval_grid == "heldout-v2":
+        specs = make_sealed_heldout_specs(config)
+        grid_path = SEALED_HELDOUT_GRID_PATH
+        grid_sha256 = SEALED_HELDOUT_GRID_SHA256
+    else:
+        specs = make_eval_specs(num_exposures, config)
+        grid_path = None
+        grid_sha256 = ""
     summary_rows: list[dict[str, Any]] = []
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1622,6 +1733,19 @@ def evaluate_rollout_counterfactuals(
         summary_rows.extend(rollout_summary_rows(variant, result))
 
     write_csv_rows(output_dir / "counterfactual_rollout_summary.csv", summary_rows)
+    write_csv_rows(
+        output_dir / "evaluation_grid_manifest.csv",
+        [
+            {
+                "evaluation_grid": eval_grid,
+                "grid_path": str(grid_path) if grid_path is not None else "generated",
+                "grid_sha256": grid_sha256,
+                "n_exposures": len(specs),
+                "exposure_id_first": specs[0].exposure_id,
+                "exposure_id_last": specs[-1].exposure_id,
+            }
+        ],
+    )
     return summary_rows
 
 
@@ -2332,6 +2456,7 @@ def main(argv: list[str] | None = None) -> int:
             variants=args.counterfactual_variants,
             bootstrap_samples=args.bootstrap_samples,
             figures=not args.no_figures,
+            eval_grid=args.eval_grid,
         )
         print(
             f"Wrote single-lane rollout counterfactual analysis to {output_dir} "

@@ -1,175 +1,127 @@
 # Highway Transition Timing
 
-This project compares FD, BAL, and SP Double DQN policies under matched
-`highway-env` exposures. The maintained experiment code is intentionally
-limited to two experiment directories:
+This repository studies whether the onset time of an RL policy's behavioural
+transition reveals how its reward trades speed against front spacing. The
+maintained evidence consists of three controlled highway arms, twenty
+independently trained seeds per arm, and a checksum-sealed held-out evaluation.
 
-- `experiments/single_lane_slow_front/`: slowdown-onset timing in a controlled
-  single-lane slow-front scenario;
-- `experiments/multilane_open_lane_change/`: lane-change-onset timing on a
-  two-lane road when the adjacent left lane is open.
+## Maintained Experiments
 
-Vanilla Stable-Baselines3 DQN is not supported. All training and model loading
-use the project's Double DQN implementation in
-`src/highway_transition_timing/double_dqn.py`.
+| Arm | Environment | Manipulation | Endpoint | Training seeds |
+| --- | --- | --- | --- | --- |
+| A | single lane | slowing buys spacing but costs speed | persistent slowdown onset | 3100-3119 |
+| B | two lanes, empty target lane | lane change improves speed and spacing together | physical lane-index change | 4100-4119 |
+| C | two lanes, occupied target lane | lane change restores the speed-spacing trade-off | physical lane-index change | 4200-4219 |
 
-## Setup
+FD, BAL, and SP are reward conditions, not personality labels. Within each
+training seed they share the same scenario sequence. Across-seed inference uses
+the training seed as the unit of replication.
 
-Create or activate a Python 3.10+ environment, then install the simulator
-dependencies:
+Current run prefixes:
 
-```bash
-python -m pip install -r requirements-pilot.txt
+```text
+single_lane_slow_front_fixed_100k_seed<3100-3119>
+multilane_twolane_open_fixed_100k_seed<4100-4119>
+multilane_twolane_occupied_fixed_100k_seed<4200-4219>
 ```
 
-Run the test suite from the project root:
-
-```bash
-PYTHONPATH=src pytest -q
-```
-
-## Single-Lane Slow-Front Experiment
-
-Audit the stratified reset generator before training:
-
-```bash
-PYTHONPATH=src python experiments/single_lane_slow_front/run.py audit \
-  --out outputs/single_lane_slow_front_stratified_audit_seed0 \
-  --num-resets 2000 \
-  --seed 0
-```
-
-Run one local experiment:
-
-```bash
-PYTHONPATH=src python experiments/single_lane_slow_front/run.py \
-  --out outputs/single_lane_slow_front_stratified_100k_seed0 \
-  --timesteps 100000 \
-  --num-exposures 36 \
-  --duration 120 \
-  --evaluation-duration 120 \
-  --seed 0 \
-  --bootstrap-samples 500
-```
-
-Submit the validated five-seed array on Katana:
-
-```bash
-qsub scripts/katana_single_lane_stratified.pbs
-```
-
-Run the isolated 20-second-training/120-second-evaluation diagnostic over 20
-independent seeds with:
-
-```bash
-qsub scripts/katana_single_lane_duration20_20seed.pbs
-```
-
-This keeps 100,000 total training steps and all reward/scenario settings fixed,
-using separate `single_lane_slow_front_duration20_100k_seed<seed>` outputs.
-
-The maintained 20-seed array adds checkpoint-gated model selection:
-
-```bash
-qsub scripts/katana_single_lane_selected_20seed.pbs
-```
-
-Each policy saves a checkpoint every 5,000 steps and the run keeps the latest
-checkpoint that passes the frozen development eligibility gate, recording the
-decision in `model_selection.csv`. See `docs/implementation.md` for the gate.
-
-See `experiments/single_lane_slow_front/README.md` for reset strata,
-counterfactual commands, and output details.
-
-## Multi-Lane Open-Lane Experiment
-
-Run the controlled lane-change experiment:
-
-```bash
-PYTHONPATH=src python experiments/multilane_open_lane_change/run.py \
-  --out outputs/multilane_open_lane_change_stratified_100k_seed0 \
-  --timesteps 100000 \
-  --num-exposures 36 \
-  --duration 120 \
-  --evaluation-duration 120 \
-  --training-scenario-profile stratified \
-  --bootstrap-samples 500
-```
-
-Submit the five-seed multi-lane retraining array on Katana:
-
-```bash
-qsub scripts/katana_multilane_open_lane_change.pbs
-```
-
-Each array task trains FD, BAL, and SP for one seed and writes to
-`/srv/scratch/$USER/highway_transition_timing/outputs/multilane_open_lane_change_stratified_100k_seed<seed>/`.
-
-Before entering the held-out stage, submit the isolated 20-second-training,
-20-seed multi-lane diagnostic:
-
-```bash
-qsub scripts/katana_multilane_duration20_20seed.pbs
-```
-
-Array indices 0-19 map to seeds 4000-4019. Each policy still receives 100,000
-training steps and 120-second development evaluation; only the training episode
-horizon is shortened to 20 seconds. The PBS command passes `--no-figures`.
-That array reproduces the superseded four-lane results. The maintained
-multi-lane array uses two lanes and checkpoint-gated model selection:
-
-```bash
-qsub scripts/katana_multilane_twolane_selected_20seed.pbs
-```
-After copying the completed run directories back under local `outputs/`, create
-the 20-seed training figure locally with:
-
-```bash
-R_LIBS_USER=tmp/r-lib Rscript \
-  figures/multilane/plot_multiseed_results.R \
-  outputs \
-  outputs/multilane_open_lane_change_duration20_100k_20seed/figures \
-  duration20
-```
-
-This diagnostic uses only the development grid and does not open the sealed
-held-out grid.
-
-The existing multi-lane counterfactual PBS script targets the earlier
-`mixed_100k` diagnostic models. The new stratified models use the checksum-
-sealed disjoint held-out grid through:
-
-```bash
-qsub scripts/katana_multilane_heldout_rollout.pbs
-```
-
-Submit that inference array only after all five new training runs pass their
-training-integrity and development checks.
-
-See `experiments/multilane_open_lane_change/README.md` for smoke tests,
-counterfactual rollouts, and report-figure generation.
-
-## Project Layout
+## Repository Layout
 
 ```text
 experiments/
-├── single_lane_slow_front/
-└── multilane_open_lane_change/
+  single_lane_slow_front/       Arm A implementation
+  multilane_open_lane_change/   Arms B and C implementation
+  heldout_v2/                   Frozen grids and confirmatory protocol
 scripts/
-├── katana_multilane_heldout_rollout.pbs
-├── katana_multilane_duration20_20seed.pbs
-├── katana_multilane_open_lane_change.pbs
-├── katana_single_lane_duration20_20seed.pbs
-└── katana_single_lane_stratified.pbs
-figures/                        # local plotting workspace, ignored
-├── single_lane/
-├── multilane/
-└── shared/
-src/highway_transition_timing/
-tests/
-outputs/                         # generated and ignored
+  katana_arm*_fixed_20seed.pbs  Current training arrays
+  katana_arm*_counterfactual.pbs
+  katana_arm*_heldout_v2.pbs
+  aggregate_heldout_v2.py
+src/highway_transition_timing/  Shared onset, analysis, and reward code
+tests/                          Unit and integration tests
+docs/
+  proposals/                    Canonical research proposal
+  manuscripts/acra2026/         Current ACRA manuscript
+  implementation.md             Current implementation contract
+  dev_log.md                    Historical investigation record
+outputs/                        Generated models and results; never cleaned here
 ```
 
-Generated runs, local figure scripts, caches, dependency folders, and temporary
-work products are ignored. Experiment commands recreate their required output
-directories.
+## Environment
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -e '.[pilot,plots,dev]'
+```
+
+Use `PYTHONPATH=src` when running directly from a source checkout.
+
+## Current Training Arrays
+
+The existing 20-seed outputs were produced by these scripts. Rerunning them is
+not required for held-out v2.
+
+```bash
+qsub scripts/katana_armA_single_lane_fixed_20seed.pbs
+qsub scripts/katana_armB_twolane_open_fixed_20seed.pbs
+qsub scripts/katana_armC_twolane_occupied_fixed_20seed.pbs
+```
+
+## Independent Counterfactuals
+
+These inference-only arrays evaluate the selected models on the development
+grid. They do not retrain or replace checkpoints.
+
+```bash
+qsub scripts/katana_armA_single_lane_counterfactual.pbs
+qsub scripts/katana_armB_twolane_counterfactual.pbs
+qsub scripts/katana_armC_twolane_counterfactual.pbs
+```
+
+## Held-Out V2
+
+The final confirmatory protocol is frozen in
+`experiments/heldout_v2/protocol.md`. It reuses the existing 60 selected models
+and runs inference on physical values that are disjoint from development while
+remaining inside the maintained training and observation support.
+
+Submit once on Katana:
+
+```bash
+qsub scripts/katana_armA_heldout_v2.pbs
+qsub scripts/katana_armB_heldout_v2.pbs
+qsub scripts/katana_armC_heldout_v2.pbs
+```
+
+After all run directories are synchronized beneath local `outputs/`, validate
+and aggregate them:
+
+```bash
+PYTHONPATH=src python3 scripts/aggregate_heldout_v2.py
+```
+
+The aggregate is written to `outputs/heldout_v2_20seed/analysis/`, including a
+short `synchronisation_summary.md` for discussion with collaborators.
+
+## Manuscript
+
+Build the current ACRA draft from `docs/manuscripts/acra2026/`:
+
+```bash
+latexmk -pdf paper.tex
+```
+
+The manuscript currently distinguishes development evidence from held-out
+evidence. A campus user study remains a separate claim-expansion decision.
+
+## Verification
+
+```bash
+PYTHONPATH=src pytest -q
+bash -n scripts/*.pbs
+python3 -m py_compile scripts/aggregate_heldout_v2.py
+```
+
+Historical diagnostics and superseded experiments are described only in
+`docs/dev_log.md`; obsolete execution scripts are intentionally not retained.

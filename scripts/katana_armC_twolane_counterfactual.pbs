@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Arm C counterfactual battery, run independently of model selection.
+#
+# The per-variant numbers reported so far come from the selection gate, which
+# required zero no-front onsets and a minimum delay under both weakened
+# variants. The direction of those effects is therefore not independent
+# evidence: the checkpoint was chosen because it produced them. This array
+# re-runs the variants on the already-selected policies as a standalone
+# rollout, so the controls are measured without having chosen the policies
+# they describe.
+#
+# The fifth variant, open-target-lane, removes the vehicle occupying the target
+# lane and changes nothing else. It turns each arm C scene into its arm B
+# counterpart for the very same policy, so the occupancy contrast holds the
+# training run fixed. The between-arm comparison cannot do that: arms B and C
+# differ by one design variable but also by two separate sets of training runs.
+#
+# The rollout also records the opening action under each variant, taken before
+# any simulation time elapses, which is what localises the response cue.
+#
+# Inference only. No training, no checkpoint selection, and the development
+# grid throughout: the sealed held-out grid is never loaded here. The scenario
+# geometry is restored from training_runs.csv, so the evaluation grid matches
+# the one the policy trained and was selected on.
+
+#PBS -N armC-cf
+#PBS -J 0-19
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=02:00:00
+#PBS -j oe
+
+set -euo pipefail
+
+cd "${PBS_O_WORKDIR}"
+
+module load python/3.11.3
+
+VENV_DIR="/srv/scratch/${USER}/venvs/highway-transition"
+if [[ ! -f "${VENV_DIR}/bin/activate" ]]; then
+  echo "Missing Python environment: ${VENV_DIR}" >&2
+  exit 1
+fi
+source "${VENV_DIR}/bin/activate"
+
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export MPLCONFIGDIR="${TMPDIR}/matplotlib"
+export XDG_CACHE_HOME="${TMPDIR}/cache"
+mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
+
+RUN_SEED=$((4200 + PBS_ARRAY_INDEX))
+RUN_NAME="multilane_twolane_occupied_fixed_100k_seed${RUN_SEED}"
+RUN_DIR="/srv/scratch/${USER}/highway_transition_timing/outputs/${RUN_NAME}"
+
+if [[ ! -d "${RUN_DIR}/models" ]]; then
+  echo "Missing completed run: ${RUN_DIR}" >&2
+  exit 1
+fi
+
+python3 experiments/multilane_open_lane_change/rollout_counterfactual.py \
+  --run-dir "${RUN_DIR}" \
+  --agents FD BAL SP \
+  --num-exposures 36 \
+  --evaluation-duration 120 \
+  --eval-grid development \
+  --variants original no-front matched-speed-front far-front open-target-lane
+
+OUT_DIR="${RUN_DIR}/rollout_counterfactual_open_lane"
+for name in counterfactual_rollout_summary.csv opening_action_summary.csv; do
+  if [[ ! -f "${OUT_DIR}/${name}" ]]; then
+    echo "Missing counterfactual output: ${OUT_DIR}/${name}" >&2
+    exit 1
+  fi
+done
+
+echo "Completed ${RUN_NAME}: arm=C selection_independent=yes heldout=unopened"

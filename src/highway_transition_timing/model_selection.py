@@ -30,7 +30,7 @@ from typing import Any
 from stable_baselines3.common.callbacks import BaseCallback
 
 from .constants import VALID_ONSET, TERMINAL_FAILURE
-from .utils import get_float, get_str, median
+from .utils import get_bool, get_float, get_str, median
 
 CHECKPOINT_INTERVAL_STEPS = 5_000
 
@@ -59,6 +59,7 @@ class VariantOutcome:
     valid_onsets: int
     censored: int
     terminal_failures: int
+    collision_episodes: int
     median_onset_seconds: float | None
 
 
@@ -100,6 +101,11 @@ def variant_outcome(
             for row in rows
             if get_str(row, "episode_outcome") == TERMINAL_FAILURE
         ),
+        # A terminal failure is a collision that precedes the onset, so counting
+        # terminal failures alone lets a policy that completes its onset and
+        # then collides pass the safety criterion. Collision episodes are the
+        # superset the safety gate is meant to bound.
+        collision_episodes=sum(1 for row in rows if get_bool(row, "collision_flag")),
         median_onset_seconds=median(onset_seconds),
     )
 
@@ -119,14 +125,15 @@ def evaluate_gate(outcomes: Mapping[str, VariantOutcome]) -> GateResult:
     min_valid = math.ceil(MIN_VALID_ONSET_RATE * episodes)
 
     criteria: dict[str, bool] = {
-        "safety": original.terminal_failures <= max_terminal,
+        "safety": original.collision_episodes <= max_terminal,
         "estimability": original.valid_onsets >= min_valid,
         "no_front_specificity": (
             outcomes[NO_FRONT_VARIANT].valid_onsets <= MAX_NO_FRONT_VALID_ONSETS
         ),
     }
     details = [
-        f"terminal={original.terminal_failures}/{episodes} (max {max_terminal})",
+        f"collisions={original.collision_episodes}/{episodes} (max {max_terminal})",
+        f"terminal={original.terminal_failures}/{episodes}",
         f"valid={original.valid_onsets}/{episodes} (min {min_valid})",
         f"no_front_valid={outcomes[NO_FRONT_VARIANT].valid_onsets}",
     ]
@@ -253,6 +260,7 @@ def select_latest_eligible_checkpoint(
             record[f"{key}_valid_onsets"] = outcome.valid_onsets
             record[f"{key}_censored"] = outcome.censored
             record[f"{key}_terminal_failures"] = outcome.terminal_failures
+            record[f"{key}_collision_episodes"] = outcome.collision_episodes
             record[f"{key}_median_onset_seconds"] = (
                 round(outcome.median_onset_seconds, 6)
                 if outcome.median_onset_seconds is not None

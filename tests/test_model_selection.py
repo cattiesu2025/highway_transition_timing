@@ -20,12 +20,19 @@ def _outcomes(
     no_front_valid=0,
     control_median=8.0,
     control_valid=36,
+    collisions=None,
 ):
+    # A terminal failure is a collision that precedes the onset, so by default
+    # the collision count matches it; the post-onset case is exercised by
+    # passing `collisions` on its own.
+    collided = terminal if collisions is None else collisions
     return {
-        "original": VariantOutcome(valid, 36 - valid - terminal, terminal, original_median),
-        "no-front": VariantOutcome(no_front_valid, 36 - no_front_valid, 0, None),
-        "matched-speed-front": VariantOutcome(control_valid, 0, 0, control_median),
-        "far-front": VariantOutcome(control_valid, 0, 0, control_median),
+        "original": VariantOutcome(
+            valid, 36 - valid - terminal, terminal, collided, original_median
+        ),
+        "no-front": VariantOutcome(no_front_valid, 36 - no_front_valid, 0, 0, None),
+        "matched-speed-front": VariantOutcome(control_valid, 0, 0, 0, control_median),
+        "far-front": VariantOutcome(control_valid, 0, 0, 0, control_median),
     }
 
 
@@ -82,15 +89,15 @@ class GateTests(unittest.TestCase):
         # failure is tolerated and at least ceil(27/36 * 6) = 5 onsets are
         # required.
         outcomes = {
-            "original": VariantOutcome(5, 1, 0, 2.0),
-            "no-front": VariantOutcome(0, 6, 0, None),
-            "matched-speed-front": VariantOutcome(6, 0, 0, 8.0),
-            "far-front": VariantOutcome(6, 0, 0, 8.0),
+            "original": VariantOutcome(5, 1, 0, 0, 2.0),
+            "no-front": VariantOutcome(0, 6, 0, 0, None),
+            "matched-speed-front": VariantOutcome(6, 0, 0, 0, 8.0),
+            "far-front": VariantOutcome(6, 0, 0, 0, 8.0),
         }
 
         self.assertTrue(evaluate_gate(outcomes).eligible)
 
-        outcomes["original"] = VariantOutcome(4, 1, 1, 2.0)
+        outcomes["original"] = VariantOutcome(4, 1, 1, 1, 2.0)
         gate = evaluate_gate(outcomes)
 
         self.assertFalse(gate.criteria["safety"])
@@ -103,7 +110,7 @@ class GateTests(unittest.TestCase):
 
     def test_empty_original_variant_is_rejected(self):
         outcomes = _outcomes()
-        outcomes["original"] = VariantOutcome(0, 0, 0, None)
+        outcomes["original"] = VariantOutcome(0, 0, 0, 0, None)
 
         with self.assertRaises(ValueError):
             evaluate_gate(outcomes)
@@ -211,3 +218,23 @@ class CheckpointDiscoveryTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CollisionSafetyGateTests(unittest.TestCase):
+    def test_safety_rejects_a_collision_that_follows_the_onset(self):
+        """The gate counted terminal failures, and an episode whose collision
+        follows a completed onset is classified as a valid onset rather than a
+        terminal failure. A policy that completed its lane change and then
+        collided in every scene therefore passed the safety criterion."""
+
+        gate = evaluate_gate(_outcomes(valid=36, terminal=0, collisions=36))
+
+        self.assertFalse(gate.criteria["safety"])
+        self.assertFalse(gate.eligible)
+        self.assertIn("collisions=36/36", gate.detail)
+
+    def test_safety_keeps_its_tolerance(self):
+        gate = evaluate_gate(_outcomes(valid=36, terminal=0, collisions=1))
+
+        self.assertTrue(gate.criteria["safety"])
+        self.assertTrue(gate.eligible)

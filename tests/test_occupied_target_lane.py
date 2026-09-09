@@ -12,6 +12,7 @@ arm B in exactly one variable, so the two arms stay comparable.
 from __future__ import annotations
 
 import importlib.util
+import json
 import sys
 from pathlib import Path
 
@@ -124,3 +125,41 @@ def test_open_lane_training_leaves_the_target_lane_empty():
     config = run.ExperimentConfig()
     specs = [run.make_training_spec(index, config) for index in range(40)]
     assert all(spec.target_lane_gap is None for spec in specs)
+
+
+def test_exposure_row_records_the_merge_gap_and_the_scenario_type():
+    """The merge gap is the third evaluation axis and must be readable from the
+    artefact. Without it the gap can only be re-derived from the exposure index,
+    which no reader of the CSV can verify and which breaks silently if the grid
+    definition ever changes. The difficulty bin was hard-coded to the open-lane
+    name, mislabelling every occupied-lane scene for any stratified analysis.
+    """
+
+    config = run.ExperimentConfig(target_lane_vehicle=True, evaluation_duration=20)
+    spec = run.make_eval_specs(36, config)[0]
+    env = run.make_env("FD", config, training=False)
+    env.reset(seed=spec.exposure_seed)
+    run.apply_open_lane_scene(env, spec)
+
+    row = run.exposure_row_from_spec(env, spec, config)
+    env.close()
+
+    state = json.loads(row["background_vehicle_state"])
+    assert state["target_lane_gap"] == spec.target_lane_gap
+    assert state["target_lane_gap"] in run.TARGET_LANE_MERGE_GAPS
+    assert row["exposure_difficulty_bin"] == "occupied_lane_slow_front"
+
+
+def test_open_lane_exposure_row_keeps_its_own_label():
+    config = run.ExperimentConfig(evaluation_duration=20)
+    spec = run.make_eval_specs(36, config)[0]
+    env = run.make_env("FD", config, training=False)
+    env.reset(seed=spec.exposure_seed)
+    run.apply_open_lane_scene(env, spec)
+
+    row = run.exposure_row_from_spec(env, spec, config)
+    env.close()
+
+    state = json.loads(row["background_vehicle_state"])
+    assert state["target_lane_gap"] is None
+    assert row["exposure_difficulty_bin"] == "open_lane_slow_front"

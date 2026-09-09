@@ -7,10 +7,11 @@ from typing import Any
 
 from .config import AnalysisConfig
 from .constants import (
-    LANE_CHANGE_ACTIONS,
     LANE_CHANGE_ONSET_TARGET,
     LANE_CHANGE_TARGET_LABEL,
+    LEFT_LANE_CHANGE_ACTIONS,
     NO_ONSET_CENSORED,
+    RIGHT_LANE_CHANGE_ACTIONS,
     SLOW_ACTIONS,
     SLOWDOWN_ONSET_TARGET,
     SLOWDOWN_TARGET_LABEL,
@@ -112,8 +113,9 @@ def select_first_confirmed_lane_change_onset(
     motion, so command persistence cannot confirm it. Confirmation is instead
     the first realised physical lane-index change after exposure, and onset is
     the earliest lane-change command inside the confirmation window that
-    precedes it. Episodes that never complete a lane change have no onset,
-    however many lane-change commands they issued.
+    precedes it and points in the direction the vehicle actually moved.
+    Episodes that never complete a lane change have no onset, however many
+    lane-change commands they issued.
     """
 
     if not step_rows:
@@ -129,20 +131,33 @@ def select_first_confirmed_lane_change_onset(
 
     initial_lane = get_int(post_exposure_steps[0], "ego_lane", 0)
     confirmation_t: int | None = None
+    realised_lane: int | None = None
     for row in post_exposure_steps:
         pre_lane = get_int(row, "ego_lane", initial_lane)
         post_lane = get_int(row, "post_ego_lane", pre_lane)
         if pre_lane != initial_lane or post_lane != initial_lane:
             confirmation_t = get_int(row, "t", 0)
+            realised_lane = post_lane if post_lane != initial_lane else pre_lane
             break
-    if confirmation_t is None:
+    if confirmation_t is None or realised_lane is None:
         return None
 
+    # Only a command in the direction the vehicle actually moved can have caused
+    # the change. Lane indices increase to the right, so a fall in the index is a
+    # left change. Accepting either direction lets a command that cannot move the
+    # vehicle at all -- LANE_RIGHT from the rightmost lane, which the simulator
+    # executes as a no-op -- date the onset up to a full confirmation window
+    # before the command that actually caused the change.
+    matching_actions = (
+        RIGHT_LANE_CHANGE_ACTIONS
+        if realised_lane > initial_lane
+        else LEFT_LANE_CHANGE_ACTIONS
+    )
     window_start = max(exposure_t, confirmation_t - config.lane_change_confirmation_window)
     command_times = [
         get_int(row, "t", 0)
         for row in post_exposure_steps
-        if get_str(row, "action").upper() in LANE_CHANGE_ACTIONS
+        if get_str(row, "action").upper() in matching_actions
         and window_start <= get_int(row, "t", 0) <= confirmation_t
     ]
     onset_t = min(command_times) if command_times else confirmation_t

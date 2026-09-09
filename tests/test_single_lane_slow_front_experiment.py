@@ -79,6 +79,45 @@ def test_eval_specs_cover_full_factorial_grid_before_repeating():
     )
 
 
+def test_heldout_v2_grid_is_sealed_supported_and_disjoint():
+    config = ExperimentConfig(seed=11)
+
+    heldout = experiment.make_sealed_heldout_specs(config)
+    heldout_other_seed = experiment.make_sealed_heldout_specs(
+        ExperimentConfig(seed=99)
+    )
+    development = experiment.make_eval_specs(36, config)
+
+    assert len(heldout) == 36
+    assert experiment.file_sha256(experiment.SEALED_HELDOUT_GRID_PATH) == (
+        experiment.SEALED_HELDOUT_GRID_SHA256
+    )
+    assert [spec.exposure_seed for spec in heldout] == [
+        spec.exposure_seed for spec in heldout_other_seed
+    ]
+    assert {spec.ego_speed for spec in heldout} == {25.0, 27.0, 29.0}
+    assert {spec.front_distance for spec in heldout} == {
+        142.5,
+        157.5,
+        172.5,
+        187.5,
+    }
+    assert {spec.front_speed for spec in heldout} == {11.0, 15.0, 19.0}
+    assert all(spec.visible_at_t0 for spec in heldout)
+    for field in ("ego_speed", "front_distance", "front_speed"):
+        assert {getattr(spec, field) for spec in heldout}.isdisjoint(
+            {getattr(spec, field) for spec in development}
+        )
+
+
+def test_single_lane_rollout_cli_accepts_heldout_v2():
+    args = experiment.build_rollout_counterfactual_parser().parse_args(
+        ["--run-dir", "trained-run", "--eval-grid", "heldout-v2"]
+    )
+
+    assert args.eval_grid == "heldout-v2"
+
+
 def test_no_front_train_fraction_controls_training_spec_variant():
     always_front = make_training_spec(
         0,

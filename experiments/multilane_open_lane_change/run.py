@@ -113,9 +113,21 @@ VISIBLE_DIFFICULTY_CELLS = {
     ("medium", "moderate"): ((8.001, 12.0), (0.50, 0.999)),
     ("hard", "strong"): ((5.001, 8.0), (1.00, 1.999)),
 }
-SEALED_HELDOUT_GRID_PATH = Path(__file__).with_name("heldout_grid_v1.csv")
-SEALED_HELDOUT_GRID_SHA256 = (
+LEGACY_HELDOUT_GRID_V1_PATH = Path(__file__).with_name("heldout_grid_v1.csv")
+LEGACY_HELDOUT_GRID_V1_SHA256 = (
     "d861b169fb618b0053f972f128fa498d3249d48969209db99e342af7732e6964"
+)
+SEALED_HELDOUT_GRID_PATH = (
+    Path(__file__).parents[1] / "heldout_v2" / "arm_ab_grid.csv"
+)
+SEALED_HELDOUT_GRID_SHA256 = (
+    "094a840d57782fe63eba6604c8ac36cc45e5b1d4f5aa72d05a2cba4fe5a18caf"
+)
+SEALED_HELDOUT_ARM_C_GRID_PATH = (
+    Path(__file__).parents[1] / "heldout_v2" / "arm_c_grid.csv"
+)
+SEALED_HELDOUT_ARM_C_GRID_SHA256 = (
+    "065af8ea3de7bfa8f56695e81675b553ea3047158e9f694c746c7fe8b30cfdf9"
 )
 
 
@@ -1029,6 +1041,7 @@ def load_eval_specs(
         "front_distance",
         "front_speed",
         "ego_lane",
+        "target_lane_gap",
     }
     with path.open(newline="") as handle:
         reader = csv.DictReader(handle)
@@ -1043,6 +1056,20 @@ def load_eval_specs(
 
     specs: list[OpenLaneSpec] = []
     for row in rows:
+        target_lane_gap_text = row.get("target_lane_gap", "").strip()
+        target_lane_gap = (
+            float(target_lane_gap_text) if target_lane_gap_text else None
+        )
+        if config.target_lane_vehicle and target_lane_gap is None:
+            raise ValueError(
+                f"Occupied-target held-out row lacks target_lane_gap: "
+                f"{row['exposure_id']}"
+            )
+        if not config.target_lane_vehicle and target_lane_gap is not None:
+            raise ValueError(
+                f"Open-target held-out row unexpectedly has target_lane_gap: "
+                f"{row['exposure_id']}"
+            )
         spec = build_open_lane_spec(
             exposure_id=str(row["exposure_id"]),
             exposure_seed=int(row["exposure_seed"]),
@@ -1050,8 +1077,13 @@ def load_eval_specs(
             ego_speed=float(row["ego_speed"]),
             front_distance=float(row["front_distance"]),
             front_speed=float(row["front_speed"]),
-            scenario_type="heldout_open_lane_slow_front",
+            scenario_type=(
+                "heldout_v2_occupied_lane_slow_front"
+                if config.target_lane_vehicle
+                else "heldout_v2_open_lane_slow_front"
+            ),
             include_front_vehicle=True,
+            target_lane_gap=target_lane_gap,
         )
         if spec.ego_lane != config.ego_lane:
             raise ValueError(
@@ -1065,12 +1097,26 @@ def load_eval_specs(
                 f"Held-out original must be a closing slow-front scene: "
                 f"{spec.exposure_id}"
             )
+        if not EGO_SPEED_RANGE[0] <= spec.ego_speed <= EGO_SPEED_RANGE[1]:
+            raise ValueError(f"Held-out ego speed outside training support: {spec.exposure_id}")
+        if not VISIBLE_TRAIN_DISTANCE_RANGE[0] <= spec.front_distance <= VISIBLE_TRAIN_DISTANCE_RANGE[1]:
+            raise ValueError(f"Held-out front distance outside training support: {spec.exposure_id}")
+        if not SLOW_FRONT_SPEED_RANGE[0] <= spec.front_speed <= SLOW_FRONT_SPEED_RANGE[1]:
+            raise ValueError(f"Held-out front speed outside training support: {spec.exposure_id}")
+        if target_lane_gap is not None and not TARGET_LANE_TRAIN_GAP_RANGE[0] <= target_lane_gap <= TARGET_LANE_TRAIN_GAP_RANGE[1]:
+            raise ValueError(f"Held-out target-lane gap outside training support: {spec.exposure_id}")
         specs.append(spec)
 
     exposure_ids = [spec.exposure_id for spec in specs]
     exposure_seeds = [spec.exposure_seed for spec in specs]
     physical_rows = [
-        (spec.ego_speed, spec.front_distance, spec.front_speed, spec.ego_lane)
+        (
+            spec.ego_speed,
+            spec.front_distance,
+            spec.front_speed,
+            spec.ego_lane,
+            spec.target_lane_gap,
+        )
         for spec in specs
     ]
     if len(set(exposure_ids)) != len(exposure_ids):
@@ -1082,19 +1128,31 @@ def load_eval_specs(
     return specs
 
 
-def make_sealed_heldout_specs(config: ExperimentConfig) -> list[OpenLaneSpec]:
-    """Load the versioned final grid and enforce its precommitted checksum."""
+def sealed_heldout_grid(config: ExperimentConfig) -> tuple[Path, str]:
+    if config.target_lane_vehicle:
+        return SEALED_HELDOUT_ARM_C_GRID_PATH, SEALED_HELDOUT_ARM_C_GRID_SHA256
+    return SEALED_HELDOUT_GRID_PATH, SEALED_HELDOUT_GRID_SHA256
 
+
+def make_sealed_heldout_specs(config: ExperimentConfig) -> list[OpenLaneSpec]:
+    """Load the arm-specific v2 grid and enforce its precommitted checksum."""
+
+    grid_path, grid_sha256 = sealed_heldout_grid(config)
     specs = load_eval_specs(
-        SEALED_HELDOUT_GRID_PATH,
+        grid_path,
         config,
-        expected_sha256=SEALED_HELDOUT_GRID_SHA256,
+        expected_sha256=grid_sha256,
     )
     if len(specs) != 36:
         raise RuntimeError(f"Sealed held-out grid must have 36 rows, got {len(specs)}")
 
     development = make_eval_specs(36, config)
-    for field in ("ego_speed", "front_distance", "front_speed"):
+    varied_fields = (
+        ("front_distance", "front_speed", "target_lane_gap")
+        if config.target_lane_vehicle
+        else ("ego_speed", "front_distance", "front_speed")
+    )
+    for field in varied_fields:
         development_values = {getattr(spec, field) for spec in development}
         heldout_values = {getattr(spec, field) for spec in specs}
         overlap = development_values.intersection(heldout_values)
@@ -1554,10 +1612,11 @@ def exposure_row_from_spec(
                 "lanes_count": config.lanes_count,
                 "target_lane_vehicle": config.target_lane_vehicle,
                 "target_lane_speed": TARGET_LANE_SPEED,
+                "target_lane_gap": spec.target_lane_gap,
             }
         ),
         "exposure_source": "multilane_open_lane_change",
-        "exposure_difficulty_bin": "open_lane_slow_front",
+        "exposure_difficulty_bin": spec.scenario_type,
         "evaluation_duration_seconds": config.evaluation_duration,
         "policy_frequency_hz": config.policy_frequency,
         "policy_step_seconds": round(config.policy_step_seconds, 6),

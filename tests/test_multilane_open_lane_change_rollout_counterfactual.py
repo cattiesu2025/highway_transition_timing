@@ -114,6 +114,15 @@ def test_counterfactual_cli_accepts_sealed_heldout_grid():
     assert args.eval_grid == "heldout"
 
 
+def test_counterfactual_cli_names_heldout_v2_explicitly():
+    module = load_module()
+    args = module.build_parser().parse_args(
+        ["--run-dir", "trained-run", "--eval-grid", "heldout-v2"]
+    )
+
+    assert args.eval_grid == "heldout-v2"
+
+
 def test_report_summary_keeps_observed_and_censored_lane_changes_separate():
     plot_module = load_plot_module()
 
@@ -200,3 +209,89 @@ def test_initial_action_summary_rejects_stale_exposure_count(tmp_path):
     )
 
     assert not plot_module.initial_action_summary_matches_exposure_count(path, 36)
+
+
+def test_open_target_lane_variant_removes_only_the_merged_vehicle():
+    """Arms B and C differ by one training variable, so the between-arm
+    occupancy contrast also carries the difference between two training runs.
+    Removing the merged vehicle from an arm C scene makes the same comparison
+    inside one policy, which is what the report needs to attribute the effect
+    to occupancy rather than to the retraining."""
+
+    module = load_module()
+
+    class Spec:
+        front_distance = 165.0
+        front_speed = 14.0
+        ego_speed = 28.0
+        target_lane_gap = 40.0
+
+    original = module.counterfactual_settings(Spec(), "original")
+    opened = module.counterfactual_settings(Spec(), "open-target-lane")
+
+    assert original["target_lane_gap"] == 40.0
+    assert opened["target_lane_gap"] is None
+    for field in ("include_front_vehicle", "front_distance", "front_speed"):
+        assert opened[field] == original[field]
+
+
+def test_every_variant_declares_the_target_lane_axis():
+    module = load_module()
+
+    class Spec:
+        front_distance = 165.0
+        front_speed = 14.0
+        ego_speed = 28.0
+        target_lane_gap = 15.0
+
+    for variant in module.VARIANTS:
+        settings = module.counterfactual_settings(Spec(), variant)
+        assert "target_lane_gap" in settings, variant
+
+
+def test_config_restores_the_scenario_geometry_from_the_training_run(tmp_path):
+    """make_eval_specs picks the evaluation grid from the scenario geometry, so
+    losing target_lane_vehicle would evaluate an occupied-lane policy on the
+    open-lane grid."""
+
+    module = load_module()
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / "training_runs.csv").write_text(
+        "seed,policy_frequency_hz,lanes_count,ego_lane,target_lane_vehicle,"
+        "target_lane_speed\n4200,5,2,1,True,29.0\n",
+        encoding="utf-8",
+    )
+
+    experiment = module.load_experiment_module()
+    config = module.config_from_training_run(experiment, run_dir, 120)
+
+    assert config.target_lane_vehicle is True
+    assert config.lanes_count == 2
+    assert config.ego_lane == 1
+    assert config.target_lane_speed == 29.0
+
+    specs = experiment.make_eval_specs(36, config)
+    assert sorted({spec.target_lane_gap for spec in specs}) == list(
+        experiment.TARGET_LANE_MERGE_GAPS
+    )
+
+
+def test_opening_action_summary_reports_the_modal_action_per_variant():
+    module = load_module()
+    rows = [
+        {
+            "agent_condition": "FD",
+            "counterfactual_variant": "original",
+            "exposure_id": f"M{index:04d}",
+            "opening_action": "IDLE" if index else "LANE_LEFT",
+        }
+        for index in range(4)
+    ]
+
+    summary = module.opening_action_summary(rows)
+
+    assert len(summary) == 1
+    assert summary[0]["modal_opening_action"] == "IDLE"
+    assert summary[0]["modal_share"] == 0.75
+    assert summary[0]["distinct_opening_actions"] == 2

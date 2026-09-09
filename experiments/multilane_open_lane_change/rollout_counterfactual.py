@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import dataclasses
 import importlib.util
 import sys
 from collections import Counter
@@ -14,7 +15,13 @@ from typing import Any
 
 
 AGENTS = ("FD", "BAL", "SP")
-VARIANTS = ("original", "no-front", "matched-speed-front", "far-front")
+VARIANTS = (
+    "original",
+    "no-front",
+    "matched-speed-front",
+    "far-front",
+    "open-target-lane",
+)
 LANE_CHANGE_ACTIONS = {"LANE_LEFT", "LANE_RIGHT"}
 
 
@@ -40,11 +47,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--num-exposures", type=int, default=36)
     parser.add_argument(
         "--eval-grid",
-        choices=("development", "heldout"),
+        choices=("development", "heldout", "heldout-v2"),
         default="development",
         help=(
             "Use the generated development grid or the checksum-sealed, "
-            "physically disjoint final held-out grid."
+            "physically disjoint held-out v2 grid. 'heldout' is a legacy alias."
         ),
     )
     parser.add_argument(
@@ -58,7 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--variants",
         nargs="+",
         choices=VARIANTS,
-        default=["original", "no-front"],
+        default=list(VARIANTS),
     )
     return parser
 
@@ -84,6 +91,16 @@ def config_from_training_run(
         evaluation_duration=evaluation_duration,
         seed=int(row.get("seed", 0)),
         policy_frequency=int(row.get("policy_frequency_hz", 5)),
+        # The scenario geometry decides which evaluation grid make_eval_specs
+        # builds. Defaulting it silently evaluates an occupied-target-lane run
+        # on the open-lane grid, which shares no axis with the grid it trained
+        # and was selected on.
+        lanes_count=int(row.get("lanes_count", 2)),
+        ego_lane=int(row.get("ego_lane", 1)),
+        target_lane_vehicle=parse_bool(row.get("target_lane_vehicle", ""), False),
+        target_lane_speed=float(
+            row.get("target_lane_speed", module.TARGET_LANE_SPEED)
+        ),
         observation_normalize=parse_bool(
             row.get("observation_normalize", ""),
             True,
@@ -108,29 +125,48 @@ def counterfactual_settings(
     spec,
     variant: str,
 ) -> dict[str, float | bool | None]:
+    """Describe one intervention on the scene.
+
+    ``open-target-lane`` removes the vehicle occupying the target lane and
+    changes nothing else, so it turns an arm C scene into its arm B counterpart
+    for the very same policy. The occupancy contrast then holds the training run
+    fixed, which the between-arm comparison cannot do.
+    """
+
     if variant == "original":
         return {
             "include_front_vehicle": True,
             "front_distance": spec.front_distance,
             "front_speed": spec.front_speed,
+            "target_lane_gap": spec.target_lane_gap,
+        }
+    if variant == "open-target-lane":
+        return {
+            "include_front_vehicle": True,
+            "front_distance": spec.front_distance,
+            "front_speed": spec.front_speed,
+            "target_lane_gap": None,
         }
     if variant == "no-front":
         return {
             "include_front_vehicle": False,
             "front_distance": None,
             "front_speed": None,
+            "target_lane_gap": spec.target_lane_gap,
         }
     if variant == "matched-speed-front":
         return {
             "include_front_vehicle": True,
             "front_distance": spec.front_distance,
             "front_speed": spec.ego_speed,
+            "target_lane_gap": spec.target_lane_gap,
         }
     if variant == "far-front":
         return {
             "include_front_vehicle": True,
             "front_distance": max(360.0, float(spec.front_distance)),
             "front_speed": spec.front_speed,
+            "target_lane_gap": spec.target_lane_gap,
         }
     raise ValueError(f"Unsupported counterfactual variant: {variant}")
 
@@ -149,18 +185,25 @@ def rollout_variant(
     for spec in specs:
         exposure_recorded = False
         settings = counterfactual_settings(spec, variant)
+        # The target-lane vehicle is placed from the spec rather than from a
+        # scene argument, so the intervention is a spec substitution.
+        scene_spec = (
+            spec
+            if settings["target_lane_gap"] == spec.target_lane_gap
+            else dataclasses.replace(spec, target_lane_gap=settings["target_lane_gap"])
+        )
         for agent in agents:
             env = module.make_env(agent, config, training=False)
             obs, _info = env.reset(seed=spec.exposure_seed)
             obs = module.apply_open_lane_scene(
                 env,
-                spec,
+                scene_spec,
                 include_front_vehicle=bool(settings["include_front_vehicle"]),
                 front_distance=settings["front_distance"],
                 front_speed=settings["front_speed"],
             )
             if not exposure_recorded:
-                exposure_row = module.exposure_row_from_spec(env, spec, config)
+                exposure_row = module.exposure_row_from_spec(env, scene_spec, config)
                 exposure_row.update(
                     {
                         "counterfactual_variant": variant,
@@ -170,6 +213,12 @@ def rollout_variant(
                         ),
                         "configured_front_speed": module.finite_or_blank(
                             settings["front_speed"]
+                        ),
+                        "configured_target_lane_gap": module.finite_or_blank(
+                            settings["target_lane_gap"]
+                        ),
+                        "baseline_target_lane_gap": module.finite_or_blank(
+                            spec.target_lane_gap
                         ),
                     }
                 )
@@ -410,6 +459,62 @@ def paired_variant_rows(
     return details, summaries
 
 
+def opening_action_rows(
+    step_rows: Sequence[Mapping[str, Any]],
+    variant: str,
+) -> list[dict[str, Any]]:
+    """Record the action each policy chooses before any simulation time elapses.
+
+    Section 3.1.3 needs this to localise the response cue: the onset says the
+    policy reacted to the hazard, while the opening action under each variant
+    says which property of the hazard it tracked, uncontaminated by whatever the
+    policy did in the intervening steps.
+    """
+
+    rows: list[dict[str, Any]] = []
+    for row in step_rows:
+        if int(row.get("t", -1)) != 0:
+            continue
+        rows.append(
+            {
+                "agent_condition": row.get("agent_condition", ""),
+                "counterfactual_variant": variant,
+                "exposure_id": row.get("exposure_id", ""),
+                "opening_action": row.get("action", ""),
+                "opening_ego_speed": row.get("ego_speed", ""),
+                "opening_front_distance": row.get("nearest_front_distance", ""),
+                "opening_front_speed": row.get("front_vehicle_speed", ""),
+                "opening_q_values": row.get("q_values_or_action_scores", ""),
+            }
+        )
+    return sorted(rows, key=lambda item: (item["agent_condition"], item["exposure_id"]))
+
+
+def opening_action_summary(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    counts: dict[tuple[str, str], Counter] = {}
+    for row in rows:
+        key = (str(row["agent_condition"]), str(row["counterfactual_variant"]))
+        counts.setdefault(key, Counter())[str(row["opening_action"])] += 1
+    summary: list[dict[str, Any]] = []
+    for (agent, variant), tally in sorted(counts.items()):
+        total = sum(tally.values())
+        modal, modal_count = tally.most_common(1)[0]
+        summary.append(
+            {
+                "agent_condition": agent,
+                "counterfactual_variant": variant,
+                "n_exposures": total,
+                "modal_opening_action": modal,
+                "modal_share": round(modal_count / total, 4) if total else "",
+                "distinct_opening_actions": len(tally),
+                "action_counts": "; ".join(
+                    f"{name}={count}" for name, count in sorted(tally.items())
+                ),
+            }
+        )
+    return summary
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     module = load_experiment_module()
@@ -432,18 +537,30 @@ def main(argv: list[str] | None = None) -> int:
         agent: dqn_class.load(run_dir / "models" / f"{agent}_main.zip")
         for agent in args.agents
     }
-    if args.eval_grid == "heldout":
+    if args.eval_grid in {"heldout", "heldout-v2"}:
         specs = module.make_sealed_heldout_specs(config)
-        grid_path = module.SEALED_HELDOUT_GRID_PATH
-        grid_sha256 = module.SEALED_HELDOUT_GRID_SHA256
+        grid_path, grid_sha256 = module.sealed_heldout_grid(config)
+        evaluation_grid = "heldout-v2"
     else:
         specs = module.make_eval_specs(args.num_exposures, config)
         grid_path = None
         grid_sha256 = ""
+        evaluation_grid = "development"
+
+    variants = list(args.variants)
+    if "open-target-lane" in variants and not config.target_lane_vehicle:
+        # With an empty target lane the intervention is a no-op, so running it
+        # would duplicate the original arm under a different label.
+        variants.remove("open-target-lane")
+        print(
+            "skipping open-target-lane: this run already has an empty target lane",
+            file=sys.stderr,
+        )
 
     all_episode_rows: list[dict[str, Any]] = []
     all_summary_rows: list[dict[str, Any]] = []
-    for variant in args.variants:
+    all_opening_rows: list[dict[str, Any]] = []
+    for variant in variants:
         steps, exposures = rollout_variant(
             module,
             models,
@@ -453,9 +570,9 @@ def main(argv: list[str] | None = None) -> int:
             variant,
         )
         for row in steps:
-            row["evaluation_grid"] = args.eval_grid
+            row["evaluation_grid"] = evaluation_grid
         for row in exposures:
-            row["evaluation_grid"] = args.eval_grid
+            row["evaluation_grid"] = evaluation_grid
         variant_dir = output_dir / variant
         module.write_csv_rows(variant_dir / "evaluation" / "steps.csv", steps)
         module.write_csv_rows(variant_dir / "evaluation" / "exposures.csv", exposures)
@@ -465,24 +582,34 @@ def main(argv: list[str] | None = None) -> int:
         )
         for row in episodes:
             row["counterfactual_variant"] = variant
-            row["evaluation_grid"] = args.eval_grid
+            row["evaluation_grid"] = evaluation_grid
         module.write_csv_rows(
             variant_dir / "analysis" / "actual_lane_change_summary.csv",
             episodes,
         )
         all_episode_rows.extend(episodes)
+        opening = opening_action_rows(steps, variant)
+        for row in opening:
+            row["evaluation_grid"] = evaluation_grid
+        module.write_csv_rows(variant_dir / "analysis" / "opening_actions.csv", opening)
+        all_opening_rows.extend(opening)
         summaries = summarize_variant(episodes, steps, variant)
         for row in summaries:
-            row["evaluation_grid"] = args.eval_grid
+            row["evaluation_grid"] = evaluation_grid
         all_summary_rows.extend(summaries)
 
+    module.write_csv_rows(output_dir / "opening_actions.csv", all_opening_rows)
+    module.write_csv_rows(
+        output_dir / "opening_action_summary.csv",
+        opening_action_summary(all_opening_rows),
+    )
     module.write_csv_rows(output_dir / "counterfactual_rollout_summary.csv", all_summary_rows)
     module.write_csv_rows(output_dir / "counterfactual_episode_summary.csv", all_episode_rows)
     module.write_csv_rows(
         output_dir / "evaluation_grid_manifest.csv",
         [
             {
-                "evaluation_grid": args.eval_grid,
+                "evaluation_grid": evaluation_grid,
                 "grid_path": str(grid_path) if grid_path is not None else "generated",
                 "grid_sha256": grid_sha256,
                 "n_exposures": len(specs),
@@ -492,7 +619,7 @@ def main(argv: list[str] | None = None) -> int:
         ],
     )
 
-    if {"original", "no-front"}.issubset(args.variants):
+    if {"original", "no-front"}.issubset(variants):
         paired_rows, paired_summary = paired_variant_rows(all_episode_rows)
         module.write_csv_rows(output_dir / "paired_original_no_front.csv", paired_rows)
         module.write_csv_rows(

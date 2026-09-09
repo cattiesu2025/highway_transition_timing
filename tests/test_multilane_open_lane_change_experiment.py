@@ -69,7 +69,7 @@ def test_eval_specs_cover_full_factorial_grid_before_repeating():
     )
 
 
-def test_sealed_heldout_grid_is_fixed_and_marginally_disjoint_from_development():
+def test_sealed_heldout_v2_grid_is_fixed_supported_and_disjoint():
     module = load_experiment_module()
     config = module.ExperimentConfig(seed=0, lanes_count=2, ego_lane=1)
 
@@ -87,20 +87,52 @@ def test_sealed_heldout_grid_is_fixed_and_marginally_disjoint_from_development()
         spec.exposure_seed for spec in heldout_other_training_seed
     ]
     assert {spec.exposure_id for spec in heldout} == {
-        f"H{index:04d}" for index in range(36)
+        f"H2AB{index:04d}" for index in range(36)
     }
     assert {spec.ego_speed for spec in heldout} == {25.0, 27.0, 29.0}
     assert {spec.front_distance for spec in heldout} == {
-        130.0,
-        170.0,
-        210.0,
-        250.0,
+        142.5,
+        157.5,
+        172.5,
+        187.5,
     }
     assert {spec.front_speed for spec in heldout} == {11.0, 15.0, 19.0}
     for field in ("ego_speed", "front_distance", "front_speed"):
         assert {
             getattr(spec, field) for spec in heldout
         }.isdisjoint({getattr(spec, field) for spec in development})
+    assert all(spec.visible_at_t0 for spec in heldout)
+
+
+def test_occupied_arm_uses_separate_sealed_gap_grid():
+    module = load_experiment_module()
+    config = module.ExperimentConfig(
+        seed=4200,
+        lanes_count=2,
+        ego_lane=1,
+        target_lane_vehicle=True,
+    )
+
+    heldout = module.make_sealed_heldout_specs(config)
+    development = module.make_eval_specs(36, config)
+    path, checksum = module.sealed_heldout_grid(config)
+
+    assert path == module.SEALED_HELDOUT_ARM_C_GRID_PATH
+    assert module.file_sha256(path) == checksum
+    assert len(heldout) == 36
+    assert {spec.ego_speed for spec in heldout} == {28.0}
+    assert {spec.front_distance for spec in heldout} == {
+        142.5,
+        157.5,
+        172.5,
+        187.5,
+    }
+    assert {spec.front_speed for spec in heldout} == {11.0, 15.0, 19.0}
+    assert {spec.target_lane_gap for spec in heldout} == {25.0, 55.0, 85.0}
+    for field in ("front_distance", "front_speed", "target_lane_gap"):
+        assert {getattr(spec, field) for spec in heldout}.isdisjoint(
+            {getattr(spec, field) for spec in development}
+        )
 
 
 def test_sealed_heldout_grid_checksum_rejects_mutation(tmp_path):
