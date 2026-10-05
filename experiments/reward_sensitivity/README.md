@@ -48,6 +48,22 @@ random sampling, not six unconditioned draws. No resampling after outcomes.
 
 ## Run
 
+The project requires Python 3.10 or newer. On the Katana login node, activate
+its maintained training environment before running any manual Python commands
+(the system `python3` may be too old):
+
+```bash
+module load python/3.11.3
+source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
+python3 --version
+python3 -c 'import sys; assert sys.version_info >= (3, 10), sys.version'
+```
+
+`SyntaxError: future feature annotations is not defined` means the selected
+interpreter is too old and the script has not started. Load/activate the above
+environment; do not remove the future import. The PBS script already performs
+these environment setup steps automatically.
+
 From the repository root, inspect a task without executing it:
 
 ```bash
