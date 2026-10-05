@@ -132,3 +132,9 @@ python3 -m py_compile scripts/aggregate_heldout_v2.py
 
 Historical diagnostics and superseded experiments are described only in
 `docs/dev_log.md`; obsolete execution scripts are intentionally not retained.
+
+## Exploratory Reward-Coefficient Sweep
+
+The six-configuration, five-seed A/B/C comparison and R figures are documented
+in [the reward sensitivity workflow](experiments/reward_sensitivity/README.md).
+It uses separate outputs and development evaluation; held-out v2 is unchanged.

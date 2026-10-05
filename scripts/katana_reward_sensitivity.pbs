@@ -1,0 +1,22 @@
+#!/bin/bash
+# 90 new models: 3 arms x 6 coefficient pairs x 5 paired seeds.
+# Train: qsub scripts/katana_reward_sensitivity.pbs
+# Evaluate after successful training: qsub -v SWEEP_PHASE=evaluate scripts/katana_reward_sensitivity.pbs
+#PBS -N reward-sweep
+#PBS -J 0-89
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+module load python/3.11.3
+source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export MPLCONFIGDIR="${TMPDIR}/matplotlib"
+export XDG_CACHE_HOME="${TMPDIR}/cache"
+mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
+python3 experiments/reward_sensitivity/run.py \
+  --index "${PBS_ARRAY_INDEX}" \
+  --out-root "/srv/scratch/${USER}/highway_transition_timing/outputs" \
+  --phase "${SWEEP_PHASE:-train}" --execute

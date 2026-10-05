@@ -47,6 +47,7 @@ from highway_transition_timing.plotting import (
 )
 from highway_transition_timing.rewards import (
     MAIN_REWARD_WEIGHTS,
+    with_preference_weights,
     REWARD_STRENGTH_RULES,
     RewardWeights,
     reward_config_table_with_strength_multiplier,
@@ -128,6 +129,8 @@ class ExperimentConfig:
     observation_absolute: bool = False
     slow_down_penalty: float = 0.0
     collision_risk_penalty: float = 3.0
+    speed_weight: float | None = None
+    front_distance_weight: float | None = None
     collision_penalty: float | None = None
     dqn_variant: str = "double-dqn"
     learning_rate: float = 5e-4
@@ -150,6 +153,9 @@ class ExperimentConfig:
     reward_strength_multiplier: float = 1.0
 
     def __post_init__(self) -> None:
+        with_preference_weights(MAIN_REWARD_WEIGHTS["BAL"], self.speed_weight, self.front_distance_weight)
+        if self.speed_weight is not None and self.reward_strength_multiplier != 1.0:
+            raise ValueError("custom weights require reward strength multiplier 1")
         if self.duration <= 0 or self.evaluation_duration <= 0:
             raise ValueError("duration values must be positive seconds")
         if self.policy_frequency <= 0 or self.simulation_frequency <= 0:
@@ -391,6 +397,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--learning-rate", type=float, default=5e-4)
     parser.add_argument("--collision-risk-penalty", type=float, default=3.0)
     parser.add_argument("--collision-penalty", type=float, default=None)
+    parser.add_argument("--speed-weight", type=float, default=None)
+    parser.add_argument("--front-distance-weight", type=float, default=None)
     parser.add_argument(
         "--reward-strength-multiplier",
         type=float,
@@ -483,6 +491,8 @@ def build_counterfactual_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--collision-risk-penalty", type=float, default=3.0)
     parser.add_argument("--collision-penalty", type=float, default=None)
+    parser.add_argument("--speed-weight", type=float, default=None)
+    parser.add_argument("--front-distance-weight", type=float, default=None)
     parser.add_argument(
         "--reward-strength-multiplier",
         type=float,
@@ -535,6 +545,8 @@ def build_rollout_counterfactual_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-figures", action="store_true")
     parser.add_argument("--collision-risk-penalty", type=float, default=3.0)
     parser.add_argument("--collision-penalty", type=float, default=None)
+    parser.add_argument("--speed-weight", type=float, default=None)
+    parser.add_argument("--front-distance-weight", type=float, default=None)
     parser.add_argument(
         "--reward-strength-multiplier",
         type=float,
@@ -594,6 +606,8 @@ def config_from_args(args: argparse.Namespace) -> ExperimentConfig:
         observation_absolute=args.absolute_observation,
         collision_risk_penalty=args.collision_risk_penalty,
         collision_penalty=args.collision_penalty,
+        speed_weight=getattr(args, "speed_weight", None),
+        front_distance_weight=getattr(args, "front_distance_weight", None),
         learning_rate=getattr(args, "learning_rate", 5e-4),
         training_scenario_profile=getattr(
             args,
@@ -630,7 +644,7 @@ def effective_reward_weights(
     """Return common overrides plus the approved strength intervention."""
 
     weights = with_common_slow_down_penalty(
-        MAIN_REWARD_WEIGHTS[agent_condition],
+        with_preference_weights(MAIN_REWARD_WEIGHTS[agent_condition], config.speed_weight, config.front_distance_weight),
         config.slow_down_penalty,
         config.collision_risk_penalty,
         config.collision_penalty,
@@ -1379,6 +1393,8 @@ def train_agents(
                 "total_timesteps": total_timesteps,
                 "checkpoint_every": checkpoint_every,
                 "seed": config.seed,
+                "configured_speed_weight": config.speed_weight,
+                "configured_front_distance_weight": config.front_distance_weight,
                 **{
                     f"base_reward_{key}": value
                     for key, value in asdict(MAIN_REWARD_WEIGHTS[agent]).items()
@@ -2176,6 +2192,8 @@ def write_analysis(
             config.collision_risk_penalty,
             config.reward_strength_multiplier,
             config.collision_penalty,
+            speed_weight=config.speed_weight,
+            front_distance_weight=config.front_distance_weight,
         ),
     )
     add_analysis_seconds(result, config)

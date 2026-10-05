@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -61,11 +61,14 @@ def reward_config_table_with_slow_down_penalty(
     common_collision_risk_penalty: float = 0.0,
     common_collision_penalty: float | None = None,
     common_lane_change_penalty: float | None = None,
+    speed_weight: float | None = None,
+    front_distance_weight: float | None = None,
 ) -> list[dict[str, float | str]]:
     """Return reward weights with optional common action/risk penalties."""
 
     rows: list[dict[str, float | str]] = []
     for agent, weights in MAIN_REWARD_WEIGHTS.items():
+        weights = with_preference_weights(weights, speed_weight, front_distance_weight)
         effective_weights = with_common_slow_down_penalty(
             weights,
             common_slow_down_penalty,
@@ -94,11 +97,14 @@ def reward_config_table_with_strength_multiplier(
     reward_strength_multiplier: float,
     common_collision_penalty: float | None = None,
     common_lane_change_penalty: float | None = None,
+    speed_weight: float | None = None,
+    front_distance_weight: float | None = None,
 ) -> list[dict[str, float | str]]:
     """Return effective reward weights for the reward-strength validation."""
 
     rows: list[dict[str, float | str]] = []
     for agent, weights in MAIN_REWARD_WEIGHTS.items():
+        weights = with_preference_weights(weights, speed_weight, front_distance_weight)
         effective_weights = with_common_slow_down_penalty(
             weights,
             common_slow_down_penalty,
@@ -196,3 +202,15 @@ def with_common_slow_down_penalty(
         right_lane_score=weights.right_lane_score,
         collision_risk_penalty=common_collision_risk_penalty,
     )
+
+
+def with_preference_weights(weights: RewardWeights, speed_weight: float | None = None,
+                            front_distance_weight: float | None = None) -> RewardWeights:
+    """Override both preference terms without modifying shared penalties."""
+    if speed_weight is None and front_distance_weight is None:
+        return weights
+    if speed_weight is None or front_distance_weight is None:
+        raise ValueError("speed and front-distance weights must be specified together")
+    if any(not math.isfinite(x) or x <= 0 for x in (speed_weight, front_distance_weight)):
+        raise ValueError("preference weights must be positive and finite")
+    return replace(weights, speed_score=speed_weight, front_distance_score=front_distance_weight)

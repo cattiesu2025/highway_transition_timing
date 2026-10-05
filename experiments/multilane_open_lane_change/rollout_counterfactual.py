@@ -90,6 +90,8 @@ def config_from_training_run(
     return module.ExperimentConfig(
         evaluation_duration=evaluation_duration,
         seed=int(row.get("seed", 0)),
+        speed_weight=float(row["configured_speed_weight"]) if row.get("configured_speed_weight") else None,
+        front_distance_weight=float(row["configured_front_distance_weight"]) if row.get("configured_front_distance_weight") else None,
         policy_frequency=int(row.get("policy_frequency_hz", 5)),
         # The scenario geometry decides which evaluation grid make_eval_specs
         # builds. Defaulting it silently evaluates an occupied-target-lane run
