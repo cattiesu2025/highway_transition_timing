@@ -72,24 +72,25 @@ def commands(job, output_root, phase):
              "--evaluation-duration", "120", "--eval-grid", "development", "--variants"] + variants]
 
 
-def main(argv=None):
+def main(argv=None, *, task_list=None):
+    tasks = jobs() if task_list is None else task_list
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--index", type=int, choices=range(90))
+    parser.add_argument("--index", type=int, choices=range(len(tasks)))
     parser.add_argument("--out-root", type=Path, default=ROOT / "outputs")
     parser.add_argument("--phase", choices=("train", "evaluate"), default="train")
     parser.add_argument("--execute", action="store_true")
-    parser.add_argument("--manifest", type=Path, help="Write all 90 tasks as JSON.")
+    parser.add_argument("--manifest", type=Path, help="Write the task manifest as JSON.")
     args = parser.parse_args(argv)
     if reproduce_sample() != VARIANTS:
         raise RuntimeError("Random sample does not match frozen variants")
     if args.manifest:
         args.manifest.parent.mkdir(parents=True, exist_ok=True)
-        args.manifest.write_text(json.dumps(jobs(), indent=2) + "\n")
+        args.manifest.write_text(json.dumps(tasks, indent=2) + "\n")
     if args.index is None:
         if args.execute:
             parser.error("--execute requires --index")
         return 0
-    job = jobs()[args.index]
+    job = tasks[args.index]
     output_root = args.out_root.resolve()
     run_dir = run_directory(output_root, job)
     calls = commands(job, output_root, args.phase)

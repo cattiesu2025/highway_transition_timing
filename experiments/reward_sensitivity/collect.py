@@ -26,15 +26,17 @@ def write(path, data):
         writer.writerows(data)
 
 
-def collect(root, out, allow_incomplete=False):
+def collect(root, out, allow_incomplete=False, *, tasks=None):
     out.mkdir(parents=True, exist_ok=True)
-    tasks = [(job, sweep.run_directory(root, job)) for job in sweep.jobs()]
-    for arm, seed0 in sweep.BASE_SEEDS.items():
-        for agent, weights in BASE.items():
-            for seed in range(seed0, seed0 + 5):
-                job = dict(arm=arm, variant=agent, agent=agent, seed=seed,
-                           speed_weight=weights[0], front_distance_weight=weights[1])
-                tasks.append((job, root / f'{PREFIX[arm]}_100k_seed{seed}'))
+    if tasks is None:
+        tasks = [(job, sweep.run_directory(root, job)) for job in sweep.jobs()]
+        for arm, seed0 in sweep.BASE_SEEDS.items():
+            for agent, weights in BASE.items():
+                for seed in range(seed0, seed0 + 5):
+                    job = dict(arm=arm, variant=agent, agent=agent, seed=seed,
+                               speed_weight=weights[0], front_distance_weight=weights[1])
+                    tasks.append((job, root / f'{PREFIX[arm]}_100k_seed{seed}'))
+    expected_count = len(tasks)
     progress, outcomes, summaries, status, counterfactuals = [], [], [], [], []
     for job, directory in tasks:
         key = {k: job[k] for k in ('arm', 'variant', 'agent', 'seed', 'speed_weight', 'front_distance_weight')}
@@ -140,14 +142,15 @@ def collect(root, out, allow_incomplete=False):
     write(out/'run_status.csv', status)
     incomplete = [r for r in status if r['status'] != 'complete']
     if incomplete and not allow_incomplete:
-        raise RuntimeError(f'{len(incomplete)} of 135 run/condition records incomplete; see run_status.csv. Use --allow-incomplete for explicitly labelled previews only.')
+        raise RuntimeError(f'{len(incomplete)} of {expected_count} run/condition records incomplete; see run_status.csv. Use --allow-incomplete for explicitly labelled previews only.')
     write(out/'training_progress.csv', progress)
     write(out/'episode_outcomes.csv', outcomes)
     write(out/'seed_summary.csv', summaries)
     write(out/'counterfactual_summary.csv', counterfactuals)
-    (out/'collection.json').write_text(json.dumps(dict(expected=135, complete=len(status)-len(incomplete),
+    (out/'collection.json').write_text(json.dumps(dict(expected=expected_count, complete=len(status)-len(incomplete),
                                                      incomplete=len(incomplete), exploratory=True), indent=2)+'\n')
-    print(f'Collected {len(status)-len(incomplete)}/135 run/condition records into {out}')
+    print(f'Collected {len(status)-len(incomplete)}/{expected_count} run/condition records into {out}')
+    return outcomes
 
 
 if __name__ == '__main__':

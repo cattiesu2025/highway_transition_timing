@@ -126,3 +126,77 @@ bash -n scripts/katana_reward_sensitivity.pbs
 Short simulator smokes validate wiring/save/reload only. They do not establish
 convergence, safety, or sensitivity findings. A full six-variant figure cannot
 be generated until the 90 new models have been trained and evaluated.
+
+## Symmetric-weight follow-up (R7/R8)
+
+This is a targeted, exploratory follow-up designed after inspecting R1–R6,
+not part of the original random sample. It tests two equal-total-weight pairs:
+
+| Pair | Front-distance preference (speed, spacing) | Speed preference (speed, spacing) |
+|---|---|---|
+| Sum 1.25 | **R7 (0.25, 1.00), new** | SP (1.00, 0.25), existing |
+| Sum 1.45 | FD (0.45, 1.00), existing | **R8 (1.00, 0.45), new** |
+
+Only A and C are included: 2 new configurations × 2 arms × 5 seeds = 20 new
+models. Reuse 20 existing FD/SP condition records; do not retrain baselines.
+Training, checkpoint selection, penalties and development evaluation are
+unchanged. This tests directional separation at two symmetric endpoint pairs,
+not monotonicity throughout the reward space or generalization to new seeds.
+All outcomes, including reverse gaps, non-onsets and collisions, are retained.
+
+`jobs_symmetric.json` freezes the new task mapping:
+
+| Array index | Arm | Variant | Seeds |
+|---|---|---|---|
+| 0–4 | A | R7 | 3100–3104 |
+| 5–9 | A | R8 | 3100–3104 |
+| 10–14 | C | R7 | 4200–4204 |
+| 15–19 | C | R8 | 4200–4204 |
+
+From the repository root, with the Python environment above active:
+
+```bash
+python3 experiments/reward_sensitivity/run_symmetric.py --index 0
+python3 experiments/reward_sensitivity/run_symmetric.py --index 19 --phase evaluate
+qsub scripts/katana_reward_symmetric.pbs
+```
+
+After all training tasks succeed, submit independent counterfactual evaluation:
+
+```bash
+qsub -v SWEEP_PHASE=evaluate scripts/katana_reward_symmetric.pbs
+```
+
+Synchronize the new `reward_sensitivity_arm{A,C}_R{7,8}_100k_seed*` directories,
+including models, metadata and evaluation outputs. The original PBS and R1–R6
+manifest remain unchanged. Existing output directories are refused, not replaced.
+
+Collect the 40 conditions into a separate follow-up analysis directory:
+
+```bash
+python3 experiments/reward_sensitivity/collect_symmetric.py
+# Preview before all new runs are present:
+python3 experiments/reward_sensitivity/collect_symmetric.py --allow-incomplete
+```
+
+Outputs are under `outputs/reward_symmetric/analysis/`, separate from the
+original 135-condition collection. Besides the standard seed/outcome/curve
+and status tables, exports include:
+
+- `paired_episode_gaps.csv`: matched scenario/rollout gaps, defined as
+  **SP-preference onset minus FD-preference onset**. Positive means the
+  speed-preference agent responds later. A uses persistent slowdown, C uses
+  physical lane crossing. Collisions remain explicit even after a valid onset.
+- `paired_seed_gaps.csv`: conditional median of within-scene gaps for each
+  training seed, counts of positive/negative/tied gaps and excluded pairs.
+  A missing onset on either side leaves the episode gap blank; it is never
+  imputed as zero or as the evaluation horizon.
+- `pair_status.csv`: all 20 planned seed comparisons, including missing sides.
+
+Pairing checks scenario/rollout IDs and logged exposure/rollout seeds. Both
+sides must contain the same 36 unique scene/rollout IDs. Training reset-prefix
+checks and metadata checks are inherited from the original collector. Across-
+seed summaries should treat the five seed medians as the replication units,
+not treat 180 scenes as independent training replicates. Counterfactual exports
+are included when present; their absence does not block original-scene gaps.
+The original R plotting script is for R1–R6 and does not plot this follow-up.
