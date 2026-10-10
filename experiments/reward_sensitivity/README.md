@@ -227,3 +227,19 @@ script uses the same startup checks and commands as the array script. Preflight
 failure occurs before any new experiment folder is created; inspect its logged
 stage/traceback rather than repeatedly submitting the unchanged job. A successful
 local preflight does not verify cluster filesystem or fontconfig performance.
+
+If the cluster disallows `strace`/`ptrace`, use the import-only diagnostic:
+
+```bash
+qsub scripts/katana_import_diagnostic.pbs
+# After completion, substitute the numeric job ID:
+tail -n 160 reward-import-check.oJOBID
+```
+
+This uses Python's own `open` audit events, enabled only by
+`HEADLESS_TRACE_OPENS=1`, in the same bounded preflight. No ptrace, privilege
+changes, training or seed selection occurs. The normal PBS output contains
+`PYTHON_OPEN` timestamps/paths/modes, stage markers and periodic stacks, not file
+contents. An open event is an attempt, not proof of successful reading; correlate
+its last paths with the stack rather than assuming the last filename is faulty.
+`Preflight passed` means dependency imports finished, not that training ran.

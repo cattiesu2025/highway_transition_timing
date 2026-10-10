@@ -9,6 +9,7 @@ import faulthandler
 import importlib
 import importlib.util
 import os
+import sys
 from pathlib import Path
 import time
 import xml.etree.ElementTree as ET
@@ -32,17 +33,36 @@ def prepare_fontconfig():
     print(f'Fontconfig: {config}; font directory: {fonts}', flush=True)
 
 
+def enable_open_diagnostics():
+    """Log Python open attempts, without ptrace or logging file contents.
+
+    An event is emitted before the operation: it is not a read-completion
+    record, and the last path alone cannot prove which operation blocked.
+    """
+    if os.environ.get('HEADLESS_TRACE_OPENS') != '1':
+        return
+
+    def log_open(event, args):
+        if event == 'open':
+            print(f'PYTHON_OPEN t={time.monotonic():.3f} path={args[0]!r} '
+                  f'mode={args[1]!r}', file=sys.stderr, flush=True)
+
+    sys.addaudithook(log_open)
+    print('Python open diagnostics enabled (no file contents).', flush=True)
+
+
 def main():
     faulthandler.enable()
     faulthandler.dump_traceback_later(60, repeat=True)
     try:
+        enable_open_diagnostics()
         prepare_fontconfig()
         for name in ('matplotlib.pyplot', 'stable_baselines3', 'highway_env'):
             start = time.monotonic()
             print(f'Preflight importing {name}', flush=True)
             importlib.import_module(name)
             print(f'Preflight imported {name} in {time.monotonic()-start:.1f}s', flush=True)
-        print('Preflight passed; starting experiment.', flush=True)
+        print('Preflight passed.', flush=True)
     finally:
         faulthandler.cancel_dump_traceback_later()
 

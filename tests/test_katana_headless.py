@@ -33,3 +33,21 @@ def test_single_retry_matches_array_command():
     assert '#PBS -J' not in retry
     assert array.split('set -euo pipefail', 1)[1].replace('${PBS_ARRAY_INDEX}', '${SWEEP_INDEX:-2}') == retry.split('set -euo pipefail', 1)[1]
     assert retry.index('source scripts/katana_headless_setup.sh') < retry.index('python3 experiments/')
+
+
+def test_open_diagnostics_opt_in_and_no_file_contents(monkeypatch, capsys):
+    spec = importlib.util.spec_from_file_location('headless_diagnostics', ROOT/'scripts/katana_headless_preflight.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    hooks = []
+    monkeypatch.setattr(module.sys, 'addaudithook', hooks.append)
+    monkeypatch.delenv('HEADLESS_TRACE_OPENS', raising=False)
+    module.enable_open_diagnostics()
+    assert hooks == []
+    monkeypatch.setenv('HEADLESS_TRACE_OPENS', '1')
+    module.enable_open_diagnostics()
+    hooks[0]('open', ('/tmp/example.pyc', 'r', 0))
+    hooks[0]('import', ('unused',))
+    output = capsys.readouterr()
+    assert 'PYTHON_OPEN' in output.err and '/tmp/example.pyc' in output.err
+    assert 'unused' not in output.err

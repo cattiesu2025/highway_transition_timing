@@ -1,0 +1,16 @@
+#!/bin/bash
+# Import-only diagnostic: no training, no seed, no experiment output directory.
+# qsub scripts/katana_import_diagnostic.pbs
+#PBS -N reward-import-check
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=00:10:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+module load python/3.11.3
+source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export HEADLESS_TRACE_OPENS=1
+echo "Import diagnostic job: ${PBS_JOBID}; node: $(hostname)"
+source scripts/katana_headless_setup.sh
