@@ -1,9 +1,8 @@
 #!/bin/bash
-# 20 new models: A/C x R7/R8 x 5 seeds. Existing FD/SP models are reused.
-# Train: qsub scripts/katana_reward_symmetric.pbs
-# Evaluate after training: qsub -v SWEEP_PHASE=evaluate scripts/katana_reward_symmetric.pbs
-#PBS -N reward-symmetric
-#PBS -J 0-19
+# Retry one condition, default index 2 (A/R7/3102).
+# qsub -v SWEEP_INDEX=2 scripts/katana_reward_symmetric_retry.pbs
+# Archive a failed run directory before retraining; never overwrite it.
+#PBS -N reward-retry
 #PBS -l select=1:ncpus=4:mem=16gb
 #PBS -l walltime=05:00:00
 #PBS -j oe
@@ -15,6 +14,6 @@ export PYTHONPATH="${PBS_O_WORKDIR}/src"
 export PYTHONUNBUFFERED=1
 source scripts/katana_headless_setup.sh
 python3 experiments/reward_sensitivity/run_symmetric.py \
-  --index "${PBS_ARRAY_INDEX}" \
+  --index "${SWEEP_INDEX:-2}" \
   --out-root "/srv/scratch/${USER}/highway_transition_timing/outputs" \
   --phase "${SWEEP_PHASE:-train}" --execute

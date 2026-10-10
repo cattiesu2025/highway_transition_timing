@@ -200,3 +200,30 @@ seed summaries should treat the five seed medians as the replication units,
 not treat 180 scenes as independent training replicates. Counterfactual exports
 are included when present; their absence does not block original-scene gaps.
 The original R plotting script is for R1–R6 and does not plot this follow-up.
+
+### Font-cache startup stall and single-task retry
+
+The symmetric PBS entry points now source `scripts/katana_headless_setup.sh`.
+Each job gets private temporary Matplotlib/fontconfig caches and an isolated
+fontconfig configuration referencing Matplotlib's bundled fonts. The preflight
+imports Matplotlib, SB3 and highway-env, prints each stage, dumps Python stacks
+if startup exceeds 60 seconds, and is limited to 300 seconds (+10 seconds kill
+grace). This mitigates system/user fontconfig scanning during headless startup;
+it does not prove every font-cache stall has that cause. `--no-figures` cannot
+prevent plotting imports performed by dependencies. No reward, seed, training
+or selection setting changes. These settings are for headless experiment jobs,
+not manuscript figure generation requiring custom fonts.
+
+For a single failed training condition, first confirm the previous task has
+ended and inspect/archive its output directory. Then submit a regular job
+(no singleton array syntax required):
+
+```bash
+qsub -v SWEEP_INDEX=2 scripts/katana_reward_symmetric_retry.pbs
+```
+
+The default index is 2 (A/R7/3102). Other indices 0–19 can be supplied. The retry
+script uses the same startup checks and commands as the array script. Preflight
+failure occurs before any new experiment folder is created; inspect its logged
+stage/traceback rather than repeatedly submitting the unchanged job. A successful
+local preflight does not verify cluster filesystem or fontconfig performance.
