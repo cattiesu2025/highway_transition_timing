@@ -51,3 +51,28 @@ def test_open_diagnostics_opt_in_and_no_file_contents(monkeypatch, capsys):
     output = capsys.readouterr()
     assert 'PYTHON_OPEN' in output.err and '/tmp/example.pyc' in output.err
     assert 'unused' not in output.err
+
+
+def test_local_dependency_verification(tmp_path, monkeypatch):
+    import pytest
+    spec = importlib.util.spec_from_file_location('headless_local', ROOT/'scripts/katana_headless_preflight.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    local = tmp_path/'local-venv'
+    monkeypatch.setenv('EXPECTED_LOCAL_VENV', str(local))
+    with pytest.raises(RuntimeError, match='Expected local venv'):
+        module.verify_local_environment()
+    monkeypatch.setattr(module.sys, 'prefix', str(local))
+    module.verify_local_environment(SimpleNamespace(__name__='example', __file__=str(local/'lib/example.py')))
+    with pytest.raises(RuntimeError, match='outside local venv'):
+        module.verify_local_environment(SimpleNamespace(__name__='example', __file__='/shared/example.py'))
+
+
+def test_local_retry_preserves_training_command_and_uses_local_python():
+    retry = (ROOT/'scripts/katana_reward_symmetric_retry.pbs').read_text()
+    local = (ROOT/'scripts/katana_reward_local_retry.pbs').read_text()
+    assert local.split('python3 experiments/', 1)[1] == retry.split('python3 experiments/', 1)[1]
+    assert 'export EXPECTED_LOCAL_VENV="$VIRTUAL_ENV"' in local
+    assert 'export PATH="${VIRTUAL_ENV}/bin:${PATH}"' in local
+    assert 'sha256sum -c' in local
+    assert 'bin/activate' not in local

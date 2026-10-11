@@ -243,3 +243,36 @@ changes, training or seed selection occurs. The normal PBS output contains
 contents. An open event is an attempt, not proof of successful reading; correlate
 its last paths with the stack rather than assuming the last filename is faulty.
 `Preflight passed` means dependency imports finished, not that training ran.
+
+### Optional node-local environment snapshot
+
+If shared dependency imports remain intermittently slow, the isolated retry can
+stage a byte-for-byte snapshot of the existing environment in node `/tmp`.
+This is a mitigation experiment, not evidence that storage is the root cause.
+On Katana, first snapshot the maintained environment while it is not being
+modified (no package installations/upgrades). The packer writes a new unique
+bundle directory and prints the exact submission command:
+
+```bash
+bash scripts/katana_pack_training_env.sh
+# Run the qsub command printed on success, for example:
+qsub -v VENV_BUNDLE=/srv/scratch/USER/venv_archives/highway-env.XXXXXX,SWEEP_INDEX=2 scripts/katana_reward_local_retry.pbs
+```
+
+Packing has a 15-minute bound; transfer and extraction each have a 5-minute
+bound. Failure at any stage prevents training. The local archive is checksum
+verified before extraction, and the local venv is removed on normal job exit.
+The shared source venv and archive are not modified or deleted. This requires
+sufficient space for the archive on scratch and both archive and extracted
+venv on the compute node. The normal exclusive experiment-directory guard
+still applies; inspect/archive any existing failed run before retraining.
+
+Python venvs are not generally portable. This workaround retains the same
+`python/3.11.3` module and calls the copied interpreter directly; copied activation
+scripts and installed command shebangs (which contain old paths) are not used.
+The preflight verifies `sys.prefix` and the origins of Matplotlib, SB3,
+highway-env, NumPy, PyTorch, pandas and Gymnasium, rejecting fallback outside
+the local venv. Other embedded absolute paths or native dependencies may still
+prevent relocation; such failures require inspection, not changing package
+versions. Base Python and project source remain on their original filesystems.
+No reward, seed, training or checkpoint-selection settings change.

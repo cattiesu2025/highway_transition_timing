@@ -51,17 +51,37 @@ def enable_open_diagnostics():
     print('Python open diagnostics enabled (no file contents).', flush=True)
 
 
+def verify_local_environment(module=None):
+    """Reject silently falling back to the original shared environment."""
+    expected = os.environ.get('EXPECTED_LOCAL_VENV')
+    if not expected:
+        return
+    root = Path(expected).resolve()
+    if Path(sys.prefix).resolve() != root:
+        raise RuntimeError(f'Expected local venv {root}, got {sys.prefix}')
+    if module is not None:
+        origin = Path(module.__file__).resolve()
+        if not origin.is_relative_to(root):
+            raise RuntimeError(f'{module.__name__} loaded outside local venv: {origin}')
+        print(f'Local dependency verified: {module.__name__}: {origin}', flush=True)
+
+
 def main():
     faulthandler.enable()
     faulthandler.dump_traceback_later(60, repeat=True)
     try:
         enable_open_diagnostics()
+        verify_local_environment()
         prepare_fontconfig()
         for name in ('matplotlib.pyplot', 'stable_baselines3', 'highway_env'):
             start = time.monotonic()
             print(f'Preflight importing {name}', flush=True)
-            importlib.import_module(name)
+            module = importlib.import_module(name)
+            verify_local_environment(module)
             print(f'Preflight imported {name} in {time.monotonic()-start:.1f}s', flush=True)
+        if os.environ.get('EXPECTED_LOCAL_VENV'):
+            for name in ('numpy', 'torch', 'pandas', 'gymnasium'):
+                verify_local_environment(importlib.import_module(name))
         print('Preflight passed.', flush=True)
     finally:
         faulthandler.cancel_dump_traceback_later()
