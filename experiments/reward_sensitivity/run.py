@@ -45,8 +45,8 @@ def run_directory(output_root, job):
     return Path(output_root) / f"reward_sensitivity_arm{job['arm']}_{job['variant']}_100k_seed{job['seed']}"
 
 
-def commands(job, output_root, phase):
-    run_dir = run_directory(output_root, job)
+def commands(job, output_root, phase, *, run_dir=None):
+    run_dir = run_directory(output_root, job) if run_dir is None else Path(run_dir)
     script = "single_lane_slow_front" if job["arm"] == "A" else "multilane_open_lane_change"
     entry = [sys.executable, str(ROOT / "experiments" / script / "run.py")]
     weights = ["--speed-weight", str(job["speed_weight"]), "--front-distance-weight", str(job["front_distance_weight"])]

@@ -32,7 +32,7 @@ def episode_key(row):
     return row['episode_id'][len(prefix):]
 
 
-def paired_tables(outcomes):
+def paired_tables(outcomes, *, pairs=PAIRS, base_seeds=supplement.BASE_SEEDS):
     groups = defaultdict(dict)
     for row in outcomes:
         group = groups[row['arm'], row['variant'], int(row['seed'])]
@@ -41,8 +41,8 @@ def paired_tables(outcomes):
             raise ValueError(f'Duplicate paired episode: {key}')
         group[key] = row
     episodes, seeds, statuses = [], [], []
-    for arm, base in supplement.BASE_SEEDS.items():
-        for pair, fd, sp in PAIRS:
+    for arm, base in base_seeds.items():
+        for pair, fd, sp in pairs:
             for seed in range(base, base + 5):
                 key = dict(arm=arm, pair=pair, fd_variant=fd, sp_variant=sp, seed=seed)
                 left, right = groups.get((arm, fd, seed)), groups.get((arm, sp, seed))

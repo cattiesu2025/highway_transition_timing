@@ -1,5 +1,8 @@
 # Exploratory reward-coefficient comparison
 
+For the separate F1-F9 fixed-total-weight experiment (70 new A/C models plus
+20 reused R2/BAL condition records), see [FIXED_SUM.md](FIXED_SUM.md).
+
 Six new coefficient pairs, three arms and five paired training seeds produce
 90 new models. Existing FD/BAL/SP baselines use the same five seeds per arm
 (45 baseline condition records). This is a new development-only experiment;

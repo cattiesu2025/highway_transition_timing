@@ -1,0 +1,20 @@
+#!/bin/bash
+# 70 new models: A/C x F1,F2,F4,F6,F7,F8,F9 x 5 seeds.
+# Train: qsub scripts/katana_reward_fixed_sum.pbs
+# Evaluate AFTER training: qsub -v SWEEP_PHASE=evaluate scripts/katana_reward_fixed_sum.pbs
+#PBS -N reward-fixed-sum
+#PBS -J 0-69
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+module load python/3.11.3
+source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+source scripts/katana_headless_setup.sh
+python3 experiments/reward_sensitivity/run_fixed_sum.py \
+  --index "${PBS_ARRAY_INDEX}" \
+  --out-root "/srv/scratch/${USER}/highway_transition_timing/outputs" \
+  --phase "${SWEEP_PHASE:-train}" --execute
