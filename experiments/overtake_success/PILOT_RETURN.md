@@ -96,6 +96,28 @@ qsub -v OVERTAKE_RUN_NAME=full_B_BAL_S10_seed4190_retry1 \
 
 retry 从头训练，不是 checkpoint resume；训练配置和 seed 不变。观察 retry 的 progress 时也使用对应目录名。
 
+### Local-environment retry after import timeout
+
+作业 9509030 以 Exit_status=124 结束，walltime 5:52。提供的调用栈显示 `Preflight importing matplotlib.pyplot` 后，在 NumPy 导入链的 `importlib ... get_data` 读取模块代码处等待；共享环境路径为 `/srv/scratch/.../venvs/highway-transition/`。这支持进一步排查共享依赖读取，而不是认定字体缓存配置已解决；截图尚未给出确切阻塞文件或文件系统根因。
+
+使用本实验的 [本地环境重试 PBS](scripts/katana_overtake_local_retry.pbs)。从 Katana 仓库根目录执行：
+
+```bash
+git pull --ff-only origin main
+bash experiments/overtake_success/scripts/pack_training_env.sh
+```
+
+打包完成后会打印包含真实 `VENV_BUNDLE` 路径的 qsub 命令，直接执行该行即可。已有完整的 `venv.tar` 和 `venv.tar.sha256` 快照时可以复用，无需重新打包：
+
+```bash
+qsub -v VENV_BUNDLE=/实际快照目录 \
+  experiments/overtake_success/scripts/katana_overtake_local_retry.pbs
+```
+
+该流程只归档现有环境，复制到计算节点 `/tmp`，校验 SHA256 后解包，并验证关键依赖实际来自本地环境；不安装/升级包。基础 Python 仍来自原来的 module，项目源码和输出仍在原路径，不能承诺绕过所有共享存储访问。复制/解包及导入预检均有超时诊断。
+
+默认独立输出 `full_B_BAL_S10_seed4190_local_retry1`，拒绝覆盖；仍然是 B/BAL/S10/seed4190/100K、换道惩罚 −0.2、成功奖励 +30。日志仍在 startup_logs 下按完整 PBS job ID 命名，正常应依次看到环境复制、校验、解包、`Preflight passed.`、`training_started` 和 steps 增长。此前作业已经结束，无需再次 qdel。这个方案已经完成本地静态/测试检查，但尚未在用户集群验证成功。
+
 ### Diagnostic commands
 
 从项目根目录运行；输出目录必须不存在。

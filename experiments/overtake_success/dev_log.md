@@ -88,3 +88,10 @@
 - runner 增加阶段 progress.json、每 1,000 步/约 30 s 的训练心跳与 partial episode CSV；120 s 无阶段/心跳更新时输出 Python 栈。所有诊断不改变动作、奖励、seed、训练预算或探索日程。
 - 单任务 PBS 支持 OVERTAKE_RUN_NAME，为后续重试保留独立目录，仍拒绝覆盖。未取消、重启或登录用户当前 Katana 作业；新日志只对后续启动的程序生效。
 - 34 项相关测试通过；本地 1,100 步 smoke 覆盖依赖导入、环境/模型创建、真实梯度更新、心跳、保存和完成。PBS shell 语法与 whitespace 检查通过。诊断改动不是对集群阻塞根因的确认或已解决声明。
+
+## 2026-10-14 — 共享环境导入超时与节点本地环境重试
+
+- 用户提供 job9509030 的 Exit_status=124、walltime=5:52。预检停在 matplotlib.pyplot 导入中的 NumPy 模块加载，栈顶为 importlib 的 get_data；路径位于共享 venv。现有字体配置处理未使导入完成，尚未证实确切底层故障文件。
+- 新增实验内 `scripts/katana_overtake_local_retry.pbs`：复用既有环境快照方案，校验归档并解包至节点 `/tmp`，明确切换 PATH/VIRTUAL_ENV，验证关键依赖来源；保持基础 Python module、奖励参数及训练命令不变。
+- 新增 `scripts/pack_training_env.sh`，复用项目打包脚本并打印本实验正确的提交命令。新输出名默认 `full_B_BAL_S10_seed4190_local_retry1`，历史失败目录不覆盖。日志仍直接写入 startup_logs。
+- 本地验证包含 PBS/bash 语法、重试训练命令与常规脚本一致、环境来源和 checksum 检查配置；未远程提交，不能声称集群故障已解决。若仍在归档复制或基础 module 读取阶段阻塞，应结合日志交由集群管理员检查存储。

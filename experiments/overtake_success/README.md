@@ -17,6 +17,8 @@ qsub experiments/overtake_success/scripts/katana_overtake_B_BAL_S10.pbs
 
 单任务脚本为 [katana_overtake_B_BAL_S10.pbs](scripts/katana_overtake_B_BAL_S10.pbs)，24-job 扩展为 [katana_overtake_trigger_pilot.pbs](scripts/katana_overtake_trigger_pilot.pbs)；不需要同时提交两者。PBS 使用提交时的仓库根目录作为工作目录。
 
+如果依赖导入在共享环境读取处超时，使用 [本地环境重试](scripts/katana_overtake_local_retry.pbs)，打包和运行步骤见 [PILOT_RETURN.md](PILOT_RETURN.md) 的 Local-environment retry 小节。它保持实验参数和依赖版本，改为在计算节点 `/tmp` 读取环境快照。
+
 ## 1. Research Questions
 
 四个 RQ 并列研究，不划分主要、次要或核心问题：分别考察成功奖励、成功终止、两者组合，以及 FD/BAL/SP 的 onset 差异。所有对应比较均按训练 seed 配对，完整报告方向、幅度和不确定性，不根据结果选择性保留某个 RQ。

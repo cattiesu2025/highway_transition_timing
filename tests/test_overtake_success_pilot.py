@@ -162,3 +162,16 @@ def test_return_before_passing_is_not_success():
     assert tracker.left_completed_time is not None
     assert tracker.passed_in_left_time is None
     assert not tracker.finish_policy_step()
+
+
+def test_local_retry_keeps_training_parameters_and_verifies_environment():
+    root = Path(__file__).parents[1] / 'experiments/overtake_success/scripts'
+    regular = (root / 'katana_overtake_B_BAL_S10.pbs').read_text()
+    local = (root / 'katana_overtake_local_retry.pbs').read_text()
+    command = regular.split('python3 -u experiments/', 1)[1].strip()
+    assert local.split('python3 -u experiments/', 1)[1].startswith(command)
+    assert 'export EXPECTED_LOCAL_VENV="$VIRTUAL_ENV"' in local
+    assert 'sha256sum -c venv.tar.sha256' in local
+    assert 'export PATH="${VIRTUAL_ENV}/bin:${PATH}"' in local
+    assert 'bin/activate' not in local
+    assert 'full_B_BAL_S10_seed4190_local_retry1' in local
