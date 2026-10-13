@@ -9,13 +9,13 @@
 
 设计修订、实现、验证与运行历史统一记录在本实验的 [dev_log.md](dev_log.md)；项目级日志仅保留日期索引和链接。
 
-本实验的 Python、PBS、设计及日志集中在本目录。先跑一次 B/BAL/S10 完整训练时，从仓库根目录执行：
+本实验的 Python、设计及日志位于本目录，PBS 统一放在本目录的 `scripts/` 子目录。先跑一次 B/BAL/S10 完整训练时，从仓库根目录执行：
 
 ```bash
-qsub experiments/overtake_success/katana_overtake_B_BAL_S10.pbs
+qsub experiments/overtake_success/scripts/katana_overtake_B_BAL_S10.pbs
 ```
 
-单任务脚本为 [katana_overtake_B_BAL_S10.pbs](katana_overtake_B_BAL_S10.pbs)，24-job 扩展为 [katana_overtake_trigger_pilot.pbs](katana_overtake_trigger_pilot.pbs)；不需要同时提交两者。PBS 使用提交时的仓库根目录作为工作目录。
+单任务脚本为 [katana_overtake_B_BAL_S10.pbs](scripts/katana_overtake_B_BAL_S10.pbs)，24-job 扩展为 [katana_overtake_trigger_pilot.pbs](scripts/katana_overtake_trigger_pilot.pbs)；不需要同时提交两者。PBS 使用提交时的仓库根目录作为工作目录。
 
 ## 1. Research Questions
 

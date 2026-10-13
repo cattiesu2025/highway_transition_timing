@@ -36,10 +36,10 @@ python3 experiments/overtake_success/collect_pilot.py \
   --root outputs/overtake_success_pilot
 
 # 在 Katana 项目目录中运行（尚未提交）：
-qsub experiments/overtake_success/katana_overtake_trigger_pilot.pbs
+qsub experiments/overtake_success/scripts/katana_overtake_trigger_pilot.pbs
 ```
 
-C 使用 seed4290；S00 将 group 改为 S00 并使用独立输出目录。完整扩展使用 B4190/4191、C4290/4291，100K 步。PBS 路径为 [katana_overtake_trigger_pilot.pbs](katana_overtake_trigger_pilot.pbs)。
+C 使用 seed4290；S00 将 group 改为 S00 并使用独立输出目录。完整扩展使用 B4190/4191、C4290/4291，100K 步。PBS 路径为 [katana_overtake_trigger_pilot.pbs](scripts/katana_overtake_trigger_pilot.pbs)。
 
 ## Existing-policy Results
 

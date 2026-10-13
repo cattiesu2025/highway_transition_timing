@@ -74,3 +74,9 @@
 - 按用户建议，将两个 `katana_overtake_*.pbs` 从项目级 `scripts/` 移至 `experiments/overtake_success/`，与 runner、设计和日志放在一起。
 - 更新 README、pilot 文档中的提交命令和相对链接。上条日志的 `scripts/` 路径为历史位置，以本条为准。
 - PBS 内容及训练参数不变；仍从仓库根目录提交。检查两个 PBS 的 shell 语法、文档链接及 diff whitespace。
+
+## 2026-10-13 — 实验内 scripts 子目录
+
+- 按用户要求，将两个 PBS 进一步整理到 `experiments/overtake_success/scripts/`，更新所有当前提交命令和文档链接。
+- 历史记录保留原位置；当前从仓库根目录执行 `qsub experiments/overtake_success/scripts/katana_overtake_B_BAL_S10.pbs`。训练参数和脚本内容不变。
+- 两个 PBS 的 shell 语法、文档链接及 whitespace 检查通过。
