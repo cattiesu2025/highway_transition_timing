@@ -80,3 +80,11 @@
 - 按用户要求，将两个 PBS 进一步整理到 `experiments/overtake_success/scripts/`，更新所有当前提交命令和文档链接。
 - 历史记录保留原位置；当前从仓库根目录执行 `qsub experiments/overtake_success/scripts/katana_overtake_B_BAL_S10.pbs`。训练参数和脚本内容不变。
 - 两个 PBS 的 shell 语法、文档链接及 whitespace 检查通过。
+
+## 2026-10-14 — Katana 启动与进度诊断
+
+- 用户报告 job9508396 运行约 2 h 15 min，累计 CPU 3 s、cpupercent=0、mem 约 253 MiB；输出目录仅有 manifest.json，PBS `.o` 尚不可见。说明执行到过 manifest 写入，但不能据此确定具体阻塞函数，根因尚未证实。
+- 两个 PBS 接入已有 `scripts/katana_headless_setup.sh` 的有界依赖导入预检、私有 fontconfig/cache；stdout/stderr 直接输出到 scratch 下按 job ID 命名的实时日志，并打印 shell 阶段。
+- runner 增加阶段 progress.json、每 1,000 步/约 30 s 的训练心跳与 partial episode CSV；120 s 无阶段/心跳更新时输出 Python 栈。所有诊断不改变动作、奖励、seed、训练预算或探索日程。
+- 单任务 PBS 支持 OVERTAKE_RUN_NAME，为后续重试保留独立目录，仍拒绝覆盖。未取消、重启或登录用户当前 Katana 作业；新日志只对后续启动的程序生效。
+- 34 项相关测试通过；本地 1,100 步 smoke 覆盖依赖导入、环境/模型创建、真实梯度更新、心跳、保存和完成。PBS shell 语法与 whitespace 检查通过。诊断改动不是对集群阻塞根因的确认或已解决声明。

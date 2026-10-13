@@ -10,6 +10,13 @@ import math
 import os
 from pathlib import Path
 import sys
+import time
+import faulthandler
+
+if __name__ == '__main__':
+    faulthandler.enable()
+    faulthandler.dump_traceback_later(120, repeat=True)
+    print('STAGE: importing training dependencies', flush=True)
 
 ROOT = Path(__file__).resolve().parents[2]
 SUCCESS_DEFINITION = 'complete_overtake_return_v1'
@@ -20,7 +27,47 @@ os.environ.setdefault('XDG_CACHE_HOME', '/tmp/overtake-cache')
 import gymnasium as gym
 import numpy as np
 from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.callbacks import BaseCallback
 from highway_transition_timing.double_dqn import DoubleDQN
+
+
+def progress_record(out, stage, **fields):
+    record = dict(stage=stage, timestamp=time.time(), pid=os.getpid(), **fields)
+    print(json.dumps(record), flush=True)
+    temporary = out / 'progress.json.tmp'
+    temporary.write_text(json.dumps(record, indent=2))
+    temporary.replace(out / 'progress.json')
+    if __name__ == '__main__':
+        # A stalled phase emits stacks; advancing work renews the watchdog.
+        faulthandler.dump_traceback_later(120, repeat=True)
+
+
+class TrainingHeartbeat(BaseCallback):
+    def __init__(self, out, env):
+        super().__init__()
+        self.out, self.audit_env = out, env
+        self.started = self.last = time.monotonic()
+
+    def emit(self, stage):
+        now = time.monotonic()
+        progress_record(self.out, stage, steps=self.num_timesteps,
+                        elapsed_seconds=round(now-self.started, 2),
+                        epsilon=float(self.model.exploration_rate),
+                        completed_episodes=len(self.audit_env.rows),
+                        success_events=len(self.audit_env.success_global_steps))
+        write_csv(self.out / 'training_episodes.partial.csv', self.audit_env.rows)
+        self.last = now
+
+    def _on_training_start(self):
+        self.emit('training_started')
+
+    def _on_step(self):
+        if self.num_timesteps % 1000 == 0 or time.monotonic() - self.last >= 30:
+            self.emit('training')
+        return True
+
+    def _on_training_end(self):
+        self.emit('training_finished')
 
 
 def load_modules():
@@ -257,8 +304,10 @@ def train_one(args, out, module):
     config = module.ExperimentConfig(seed=args.seed, duration=20, evaluation_duration=120,
                                     target_lane_vehicle=args.arm == 'C')
     beta = 30 if args.group in ('S10', 'S11') else 0
+    progress_record(out, 'creating_environment')
     env = TriggerWrapper(module.make_env(args.agent, config, training=True),
                          beta, args.group in ('S01', 'S11'))
+    progress_record(out, 'creating_model')
     model = DoubleDQN('MlpPolicy', env, learning_rate=config.learning_rate,
                       buffer_size=config.buffer_size, learning_starts=1000,
                       batch_size=config.batch_size, gamma=config.gamma,
@@ -270,7 +319,9 @@ def train_one(args, out, module):
     # a compressed 2K training schedule (which would reach epsilon .05 at 500).
     model.exploration_schedule = lambda remaining: (
         1.0 - .95 * min(args.steps * (1.0 - remaining) / 25000.0, 1.0))
-    model.learn(total_timesteps=args.steps)
+    progress_record(out, 'starting_learn')
+    model.learn(total_timesteps=args.steps, callback=TrainingHeartbeat(out, env))
+    progress_record(out, 'saving_training_outputs', steps=args.steps)
     env.finish_log()
     write_csv(out / 'training_episodes.csv', env.rows)
     write_csv(out / 'training_scenarios.csv', env.env.env.training_spec_rows)
@@ -308,6 +359,7 @@ def main():
         parser.error('steps must be positive and exposures in 1..36')
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=False)
+    progress_record(out, 'loading_experiment_module')
     import torch
     torch.set_num_threads(1)
     cf, module = load_modules()
@@ -321,12 +373,17 @@ def main():
                     versions={p: importlib.metadata.version(p) for p in
                               ['highway-env', 'gymnasium', 'stable-baselines3', 'torch']})
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=2))
+    progress_record(out, 'manifest_written')
     if args.mode == 'old-policy':
         evaluate_old(args, out, cf, module)
     else:
         train_one(args, out, module)
     (out / 'complete.json').write_text(json.dumps({'complete': True}))
+    progress_record(out, 'complete')
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    finally:
+        faulthandler.cancel_dump_traceback_later()

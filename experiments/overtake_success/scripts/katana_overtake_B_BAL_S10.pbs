@@ -6,16 +6,23 @@
 #PBS -j oe
 set -euo pipefail
 cd "${PBS_O_WORKDIR}"
+run_log_dir="/srv/scratch/${USER}/highway_transition_timing/outputs/overtake_success_return_pilot/startup_logs"
+mkdir -p "${run_log_dir}"
+run_log="${run_log_dir}/${PBS_JOBID}.log"
+exec >"${run_log}" 2>&1
+echo "Job ${PBS_JOBID}; host $(hostname); started $(date -Iseconds); log ${run_log}"
+set -x
 module load python/3.11.3
 source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
 export PYTHONPATH="${PBS_O_WORKDIR}/src"
 export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=1
 export OPENBLAS_NUM_THREADS=1
-export MPLCONFIGDIR="${TMPDIR}/matplotlib"
-export XDG_CACHE_HOME="${TMPDIR}/cache"
-mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
+source scripts/katana_headless_setup.sh
 
-python3 experiments/overtake_success/pilot.py train \
+# Use a distinct path on retry; never overwrite the stalled run.
+run_name="${OVERTAKE_RUN_NAME:-full_B_BAL_S10_seed4190}"
+if [[ ! "$run_name" =~ ^[A-Za-z0-9_-]+$ ]]; then exit 2; fi
+python3 -u experiments/overtake_success/pilot.py train \
   --arm B --agent BAL --seed 4190 --group S10 --steps 100000 \
-  --out "/srv/scratch/${USER}/highway_transition_timing/outputs/overtake_success_return_pilot/full_B_BAL_S10_seed4190"
+  --out "/srv/scratch/${USER}/highway_transition_timing/outputs/overtake_success_return_pilot/${run_name}"

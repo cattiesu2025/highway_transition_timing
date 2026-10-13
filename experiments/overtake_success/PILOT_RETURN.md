@@ -73,6 +73,29 @@ qsub experiments/overtake_success/scripts/katana_overtake_B_BAL_S10.pbs
 
 完整 24-job PBS 仍保留，当前不需要提交它。长训练由用户在 Katana 启动，本地尚未运行 100K。
 
+### Monitoring and diagnosed retry (2026-10-14)
+
+PBS 将实时 stdout/stderr 直接写到 `/srv/scratch/$USER/highway_transition_timing/outputs/overtake_success_return_pilot/startup_logs/$PBS_JOBID.log`，无需等待 PBS 回传 `.o` 文件。日志含 shell 阶段和主机名，复用项目的无显示环境预检（单独限时 300 s）。
+
+runner 写 `progress.json` 标记加载模块、创建环境、创建模型、进入训练、保存结果及完成阶段。训练中每 1,000 步或经过约 30 s 的下一次 callback 更新一次，附成功次数和已结束 episode 数，同时刷新 `training_episodes.partial.csv`。若 simulator 的单步本身阻塞，callback 无法运行；120 s Python 栈诊断帮助定位该阻塞，并不自动终止训练。
+
+```bash
+# 将 JOBID 替换为 qsub 返回的完整 job ID，例如 9508396.kman：
+tail -f "/srv/scratch/$USER/highway_transition_timing/outputs/overtake_success_return_pilot/startup_logs/JOBID.log"
+cat "/srv/scratch/$USER/highway_transition_timing/outputs/overtake_success_return_pilot/full_B_BAL_S10_seed4190/progress.json"
+```
+
+这些日志仅对新版新启动的任务有效，不会给已运行的旧 Python 进程追加心跳。原作业 9508396 的截图显示已运行约 2 h 15 min、cput 3 s、cpupercent 0，目录仅有 manifest；这是阻塞嫌疑，尚无调用栈证实根因。
+
+需要重试时先处理旧作业，不删除或覆盖原目录。使用不同 run name，例如：
+
+```bash
+qsub -v OVERTAKE_RUN_NAME=full_B_BAL_S10_seed4190_retry1 \
+  experiments/overtake_success/scripts/katana_overtake_B_BAL_S10.pbs
+```
+
+retry 从头训练，不是 checkpoint resume；训练配置和 seed 不变。观察 retry 的 progress 时也使用对应目录名。
+
 ### Diagnostic commands
 
 从项目根目录运行；输出目录必须不存在。
