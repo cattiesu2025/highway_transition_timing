@@ -68,3 +68,9 @@
 - 用户要求上传 GitHub，由用户在 Katana 自行运行。新增单任务脚本 `scripts/katana_overtake_B_BAL_S10.pbs`，避免误提交整个 24-job array；运行说明见 PILOT_RETURN.md。
 - 脚本输出训练日志、成功事件及 replay 统计和最终模型；不把训练探索比例当作训练后评估成功率。deterministic evaluation 尚不包含在该单任务脚本中。
 - 本次上传范围仅为本实验目录、两个相关 PBS 和本实验测试。模型及生成输出保持忽略；项目级 `docs/dev_log.md` 位于原有 gitignore 的 `docs/` 内，继续本地保留链接索引，不将整个历史文档强制加入提交。
+
+## 2026-10-13 — PBS 集中管理
+
+- 按用户建议，将两个 `katana_overtake_*.pbs` 从项目级 `scripts/` 移至 `experiments/overtake_success/`，与 runner、设计和日志放在一起。
+- 更新 README、pilot 文档中的提交命令和相对链接。上条日志的 `scripts/` 路径为历史位置，以本条为准。
+- PBS 内容及训练参数不变；仍从仓库根目录提交。检查两个 PBS 的 shell 语法、文档链接及 diff whitespace。

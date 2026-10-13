@@ -66,7 +66,7 @@ B 的完整超车在 episode 内 14.8 s 确认；C 分别在 17.0/19.8 s 确认�
 
 ```bash
 git pull --ff-only origin main
-qsub scripts/katana_overtake_B_BAL_S10.pbs
+qsub experiments/overtake_success/katana_overtake_B_BAL_S10.pbs
 ```
 
 这份脚本只提交一个任务。输出目录为 `/srv/scratch/$USER/highway_transition_timing/outputs/overtake_success_return_pilot/full_B_BAL_S10_seed4190`，默认拒绝覆盖。检查 `complete.json`、`training_summary.json`、`training_episodes.csv` 和 `final_model.zip`。这里的成功比例是训练探索统计；本脚本尚不包含训练后 deterministic evaluation，不能用它替代最终策略成功率。
@@ -93,7 +93,7 @@ PYTHONPATH=src .venv/bin/python -m pytest -q \
   tests/test_multilane_open_lane_change_experiment.py tests/test_highway_adapter.py
 ```
 
-C 短训练使用 seed4290；S00 使用独立目录。100K 扩展 PBS 已切换到新定义输出目录：`scripts/katana_overtake_trigger_pilot.pbs`，仍未提交。
+C 短训练使用 seed4290；S00 使用独立目录。100K 扩展 PBS 已切换到新定义输出目录：`experiments/overtake_success/katana_overtake_trigger_pilot.pbs`，仍未提交。
 
 ## Validation
 

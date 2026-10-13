@@ -9,6 +9,14 @@
 
 设计修订、实现、验证与运行历史统一记录在本实验的 [dev_log.md](dev_log.md)；项目级日志仅保留日期索引和链接。
 
+本实验的 Python、PBS、设计及日志集中在本目录。先跑一次 B/BAL/S10 完整训练时，从仓库根目录执行：
+
+```bash
+qsub experiments/overtake_success/katana_overtake_B_BAL_S10.pbs
+```
+
+单任务脚本为 [katana_overtake_B_BAL_S10.pbs](katana_overtake_B_BAL_S10.pbs)，24-job 扩展为 [katana_overtake_trigger_pilot.pbs](katana_overtake_trigger_pilot.pbs)；不需要同时提交两者。PBS 使用提交时的仓库根目录作为工作目录。
+
 ## 1. Research Questions
 
 四个 RQ 并列研究，不划分主要、次要或核心问题：分别考察成功奖励、成功终止、两者组合，以及 FD/BAL/SP 的 onset 差异。所有对应比较均按训练 seed 配对，完整报告方向、幅度和不确定性，不根据结果选择性保留某个 RQ。
