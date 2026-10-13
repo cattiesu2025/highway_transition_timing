@@ -1,0 +1,36 @@
+#!/bin/bash
+# 2 arms x 2 reserved seeds x 3 agents x 2 bonus conditions.
+#PBS -N overtake-trigger
+#PBS -J 0-23
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+module load python/3.11.3
+source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MPLCONFIGDIR="${TMPDIR}/matplotlib"
+export XDG_CACHE_HOME="${TMPDIR}/cache"
+mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
+
+idx=${PBS_ARRAY_INDEX}
+if (( idx < 0 || idx > 23 )); then exit 2; fi
+arms=(B C)
+agents=(FD BAL SP)
+groups=(S00 S10)
+arm_idx=$((idx / 12))
+seed_idx=$(((idx % 12) / 6))
+agent_idx=$(((idx % 6) / 2))
+group_idx=$((idx % 2))
+arm=${arms[$arm_idx]}
+agent=${agents[$agent_idx]}
+group=${groups[$group_idx]}
+seed=$((4190 + 100 * arm_idx + seed_idx))
+out="/srv/scratch/${USER}/highway_transition_timing/outputs/overtake_success_return_pilot/full_${arm}_${agent}_${group}_seed${seed}"
+python3 experiments/overtake_success/pilot.py train \
+  --arm "${arm}" --agent "${agent}" --seed "${seed}" --group "${group}" \
+  --steps 100000 --out "${out}"

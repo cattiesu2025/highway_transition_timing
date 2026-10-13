@@ -1,0 +1,21 @@
+#!/bin/bash
+# Single complete training run; no 24-job array.
+#PBS -N overtake-B-BAL
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+module load python/3.11.3
+source "/srv/scratch/${USER}/venvs/highway-transition/bin/activate"
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+export MPLCONFIGDIR="${TMPDIR}/matplotlib"
+export XDG_CACHE_HOME="${TMPDIR}/cache"
+mkdir -p "${MPLCONFIGDIR}" "${XDG_CACHE_HOME}"
+
+python3 experiments/overtake_success/pilot.py train \
+  --arm B --agent BAL --seed 4190 --group S10 --steps 100000 \
+  --out "/srv/scratch/${USER}/highway_transition_timing/outputs/overtake_success_return_pilot/full_B_BAL_S10_seed4190"
