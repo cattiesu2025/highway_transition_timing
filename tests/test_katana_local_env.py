@@ -1,0 +1,118 @@
+"""Exercise local staging lifecycle, capacity guard and node serialization."""
+import importlib.util
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import tarfile
+from types import SimpleNamespace
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture
+def stage():
+    spec = importlib.util.spec_from_file_location('local_stage', ROOT/'scripts/katana_local_env.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    original = {s: signal.getsignal(s) for s in (signal.SIGTERM, signal.SIGINT, signal.SIGALRM)}
+    yield module
+    for s, handler in original.items():
+        signal.signal(s, handler)
+
+
+def test_lock_waits_until_owner_releases(stage, tmp_path):
+    owner = stage.acquire_lock(tmp_path, 0)
+    with pytest.raises(TimeoutError):
+        stage.acquire_lock(tmp_path, 0)
+    owner.close()
+    with stage.acquire_lock(tmp_path, 0):
+        pass
+
+
+def test_lock_rejects_symlink(stage, tmp_path):
+    target = tmp_path/'outside'
+    target.mkdir()
+    (tmp_path/f'highway-env-lock-{os.getuid()}').symlink_to(target)
+    with pytest.raises(RuntimeError, match='Unsafe'):
+        stage.acquire_lock(tmp_path, 0)
+
+
+def test_space_and_inode_guards(stage, tmp_path, monkeypatch):
+    monkeypatch.setattr(stage.shutil, 'disk_usage', lambda root: SimpleNamespace(free=100))
+    monkeypatch.setattr(stage.os, 'statvfs', lambda root: SimpleNamespace(f_files=1000, f_favail=10))
+    with pytest.raises(RuntimeError, match='Insufficient'):
+        stage.check_space(tmp_path, 101, 1)
+    with pytest.raises(RuntimeError, match='Insufficient'):
+        stage.check_space(tmp_path, 50, 11)
+    stage.check_space(tmp_path, 50, 5)
+
+
+@pytest.mark.parametrize('fail_child', [False, True])
+def test_extract_without_archive_copy_and_cleanup(stage, tmp_path, monkeypatch, fail_child):
+    bundle, local = tmp_path/'bundle', tmp_path/'local'
+    bundle.mkdir(); local.mkdir()
+    source = tmp_path/'pyvenv.cfg'
+    source.write_text('test snapshot')
+    with tarfile.open(bundle/'venv.tar', 'w') as tar:
+        tar.add(source, arcname='pyvenv.cfg')
+    (bundle/'venv.tar.sha256').write_text('checked by cluster sha256sum')
+    real_run = stage.run_bounded
+    calls = []
+    def run(command, **kwargs):
+        calls.append(command)
+        if command[0] != 'sha256sum':
+            return real_run(command, **kwargs)
+    monkeypatch.setattr(stage, 'run_bounded', run)
+    marker = tmp_path/'child-ok'
+    script = '''import os,pathlib,sys
+p=pathlib.Path(os.environ['VIRTUAL_ENV'])
+assert (p/'pyvenv.cfg').read_text() == 'test snapshot'
+assert not (p.parent/'venv.tar').exists()
+assert os.environ['EXPECTED_LOCAL_VENV']==str(p)
+assert os.environ['PATH'].startswith(str(p/'bin')+':')
+assert 'PYTHONHOME' not in os.environ
+pathlib.Path(sys.argv[1]).write_text(str(p))
+sys.exit(int(sys.argv[2]))
+'''
+    args = ['--bundle',str(bundle),'--local-root',str(local),'--',sys.executable,
+            '-c',script,str(marker),str(int(fail_child))]
+    if fail_child:
+        with pytest.raises(subprocess.CalledProcessError):
+            stage.main(args)
+    else:
+        stage.main(args)
+    assert marker.exists()
+    assert not Path(marker.read_text()).exists()
+    assert not list(local.glob('highway-env-job.*'))
+    assert calls[0][0]=='sha256sum' and calls[1][0]=='tar'
+    with stage.acquire_lock(local, 0):
+        pass
+
+
+def test_capacity_failure_never_extracts_or_runs_child(stage, tmp_path, monkeypatch):
+    (tmp_path/'venv.tar').touch()
+    (tmp_path/'venv.tar.sha256').touch()
+    calls=[]
+    monkeypatch.setattr(stage,'run_bounded',lambda *a,**kw: calls.append(a[0]))
+    monkeypatch.setattr(stage,'required_space',lambda p:(10**30,1))
+    with pytest.raises(RuntimeError,match='Insufficient'):
+        stage.main(['--bundle',str(tmp_path),'--local-root',str(tmp_path),'--','never-run'])
+    assert len(calls)==1 and calls[0][0]=='sha256sum'
+    assert not list(tmp_path.glob('highway-env-job.*'))
+
+
+def test_child_timeout_reaped(stage):
+    with pytest.raises(subprocess.TimeoutExpired):
+        stage.run_bounded([sys.executable,'-c','import time; time.sleep(30)'], timeout=.05)
+
+
+def test_recovery_maps_only_missing_indices():
+    script=(ROOT/'scripts/katana_reward_fixed_sum_armB_recover.pbs').read_text()
+    indices=[int(i) for i in script.split('missing=(',1)[1].split(')',1)[0].split()]
+    completed={2,3,12,13,16,17,18,21,22,23,24,25,26}
+    assert len(indices)==22 and set(indices)==set(range(35))-completed
+    assert '#PBS -J 0-21' in script

@@ -208,18 +208,30 @@ Each block uses ascending seeds. New output folders are
 ### Node-local environment and submission
 
 Use `katana_reward_fixed_sum_armB_local.pbs`, not the old A/C array.
-It stages the maintained environment snapshot into a unique compute-node
-`/tmp` folder, verifies SHA256, then uses its interpreter without sourcing the
-copied activation script. Copy, checksum, extraction and dependency preflight
-have individual 300-second timeouts. The preflight checks local package origins,
-uses isolated font caches and prints stacks every 60 seconds if imports stall.
-Cleanup removes only the job's temporary folder; results remain on scratch.
-This mitigates the previously recorded startup issues; it does not guarantee
-that all cluster hangs are resolved. PBS walltime remains five hours.
+It uses `scripts/katana_local_env.py` (stdlib only, launched with module Python
+`-S`). A per-user, per-node file lock is held throughout extraction, preflight,
+training and cleanup. Other updated B jobs on the same node wait without making
+another environment copy (at most four hours, with progress every minute).
+Jobs on different nodes still run in parallel. Waiting consumes PBS walltime;
+very heavily packed nodes may require a later retry. The lock file is retained
+so all waiters use the same inode; only each job's own temporary environment is
+removed. This does not coordinate other users or older PBS entry points.
+
+The shared archive is checksum-verified and extracted directly into a unique
+node `/tmp` folder; no second archive copy is stored there. Before extraction,
+the helper estimates allocated file sizes plus 512 MiB headroom and checks
+free bytes and inodes. It fails clearly before training if capacity is
+insufficient. Checksum, archive metadata scanning and extraction each have a
+300-second bound. Child process groups are terminated on timeout/TERM before
+cleanup and lock release. The same interpreter-path checks, private font caches,
+and 300-second headless preflight remain. Results stay on scratch, package
+versions and training settings are unchanged. PBS walltime stays five hours.
+This addresses the observed same-user contention; unrelated users/processes
+can still consume node space after the capacity check.
 
 Sync the updated project files to Katana first, including the new B runner,
 manifest and two PBS files, updated `run_fixed_sum.py` and collector, and the
-existing packer/headless helpers and experiment dependencies. From the project
+new `scripts/katana_local_env.py`, existing packer/headless helpers and experiment dependencies. From the project
 root on Katana:
 
 ```bash
@@ -250,3 +262,31 @@ Expect 135 conditions: 105 newly trained and 30 reused across A/B/C. With no
 `--include-arm-b`, the collector still handles the original 90 A/C conditions.
 The existing partial preview is historical; regenerate a full three-arm plot
 from the completed collection rather than treating missing B curves as data.
+
+
+### Recover the 22 disk-full failures from array 9533407
+
+Audit of all 35 PBS logs: 13 exited with status 0; 22 failed during archive
+copy/extraction with `No space left on device`, before preflight or training.
+The nodes have 4 GiB `/tmp`, shared by multiple colocated tasks. The previous
+PBS copied and extracted an environment per task without node coordination.
+
+After syncing the fix, reuse the already verified snapshot; no repacking is
+needed. Submit this dedicated recovery array, not the full 35-job array:
+
+```bash
+export VENV_BUNDLE=/srv/scratch/$USER/venv_archives/highway-env.2DBNKs
+qsub -v VENV_BUNDLE scripts/katana_reward_fixed_sum_armB_recover.pbs
+```
+
+Recovery slots 0–21 map to original B indices:
+`0,1,4,5,6,7,8,9,10,11,14,15,19,20,27,28,29,30,31,32,33,34`.
+The 13 successful outputs are untouched. The runner still refuses to overwrite
+any existing output folder. This recovery mapping is specific to this audited
+batch; later individual failures use the single-task retry PBS and original
+B indices. The new helper and all three B PBS files must be synced together.
+
+Local validation: 20 tests passed for locking, unsafe lock-path rejection,
+space/inode rejection, real tar extraction, no local archive copy, cleanup on
+success/failure, child timeout, recovery mapping, existing preflight and runner
+guards. PBS shell syntax checks passed. This is not a Katana execution test.

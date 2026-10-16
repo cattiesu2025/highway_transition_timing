@@ -1,0 +1,18 @@
+#!/bin/bash
+# Only the 22 missing jobs from array 9533407; mapped to original B indices.
+#PBS -N fixed-sum-B-recover
+#PBS -J 0-21
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+missing=(0 1 4 5 6 7 8 9 10 11 14 15 19 20 27 28 29 30 31 32 33 34)
+: "${PBS_ARRAY_INDEX:?Recovery array index is required}"
+if [[ ! "$PBS_ARRAY_INDEX" =~ ^[0-9]+$ ]] || (( PBS_ARRAY_INDEX > 21 )); then
+  echo "Invalid recovery array index: $PBS_ARRAY_INDEX" >&2
+  exit 2
+fi
+export SWEEP_INDEX="${missing[$PBS_ARRAY_INDEX]}"
+echo "Recovery slot $PBS_ARRAY_INDEX -> original Arm B task $SWEEP_INDEX"
+source scripts/katana_reward_fixed_sum_armB_local_retry.pbs
