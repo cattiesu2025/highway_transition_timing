@@ -14,8 +14,8 @@ PAIRS = [('F1_F9', 'F1', 'F9'), ('F2_F8', 'F2', 'F8'),
 CF_VARIANTS = {'original', 'no-front', 'matched-speed-front', 'far-front'}
 
 
-def tasks(root):
-    return [(job, fixed.source_directory(root, job)) for job in fixed.conditions()]
+def tasks(root, include_arm_b=False):
+    return [(job, fixed.source_directory(root, job)) for job in fixed.conditions(dict(fixed.BASE_SEEDS, B=4100) if include_arm_b else None)]
 
 
 def verify_training(root, task_list):
@@ -47,7 +47,7 @@ def verify_evaluations(task_list, outcomes):
             if not file.is_file():
                 raise FileNotFoundError(file)
         if job['variant'] not in fixed.REUSED:
-            planned = next(j for j in fixed.jobs() if all(j[k] == job[k] for k in ('arm', 'variant', 'seed')))
+            planned = next(j for j in fixed.jobs({job['arm']: 4100} if job['arm'] == 'B' else None) if all(j[k] == job[k] for k in ('arm', 'variant', 'seed')))
             if json.loads((directory / 'sweep_job.json').read_text()) != planned:
                 raise ValueError(f'Run manifest differs: {directory}')
         signature = {}
@@ -88,12 +88,15 @@ def main(argv=None):
     parser.add_argument('--root', type=Path, default=fixed.sweep.ROOT / 'outputs')
     parser.add_argument('--out', type=Path, default=fixed.sweep.ROOT / 'outputs/reward_fixed_sum/analysis')
     parser.add_argument('--allow-incomplete', action='store_true')
+    parser.add_argument('--include-arm-b', action='store_true', help='Collect all 135 A/B/C conditions')
     args = parser.parse_args(argv)
-    task_list = tasks(args.root)
+    task_list = tasks(args.root, args.include_arm_b)
+    base_seeds = dict(fixed.BASE_SEEDS, B=4100) if args.include_arm_b else fixed.BASE_SEEDS
+    n_arms = len(base_seeds)
     verify_training(args.root, task_list)
     outcomes = collector.collect(args.root, args.out, args.allow_incomplete, tasks=task_list)
     verify_evaluations(task_list, outcomes)
-    episodes, seeds, statuses = paired.paired_tables(outcomes, pairs=PAIRS, base_seeds=fixed.BASE_SEEDS)
+    episodes, seeds, statuses = paired.paired_tables(outcomes, pairs=PAIRS, base_seeds=base_seeds)
     for name, data, fields in (
         ('paired_episode_gaps.csv', episodes, ['arm', 'pair', 'seed', 'gap_seconds']),
         ('paired_seed_gaps.csv', seeds, ['arm', 'pair', 'seed', 'conditional_median_gap_seconds']),
@@ -106,10 +109,10 @@ def main(argv=None):
     complete_cf = sum(row['status'] == 'complete' for row in cf)
     collection_file = args.out / 'collection.json'
     metadata = json.loads(collection_file.read_text())
-    metadata.update(expected_new=70, expected_reused=20, counterfactual_expected=90,
-                    counterfactual_complete=complete_cf, expected_seed_pairs=40, complete_seed_pairs=len(seeds))
+    metadata.update(expected_new=35*n_arms, expected_reused=10*n_arms, counterfactual_expected=45*n_arms,
+                    counterfactual_complete=complete_cf, expected_seed_pairs=20*n_arms, complete_seed_pairs=len(seeds))
     collection_file.write_text(json.dumps(metadata, indent=2) + '\n')
-    print(f'Paired {len(seeds)}/40 mirror seed comparisons; counterfactual coverage {complete_cf}/90.')
+    print(f'Paired {len(seeds)}/{20*n_arms} mirror seed comparisons; counterfactual coverage {complete_cf}/{45*n_arms}.')
     print('Gap = lower-spacing preference onset minus higher-spacing preference onset; missing onsets remain excluded.')
 
 

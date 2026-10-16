@@ -183,3 +183,70 @@ bash -n scripts/katana_reward_fixed_sum.pbs scripts/katana_reward_fixed_sum_retr
 
 Local previews and mocked execution checks do not establish new training or
 behavioral results. No cluster jobs are submitted by the setup scripts.
+
+## Arm B extension (2026-10-16)
+
+The original 70-job A/C manifest and indices remain frozen. Arm B uses a
+separate 35-job manifest (`jobs_fixed_sum_armB.json`), seeds 4100–4104, and
+`run_fixed_sum_armB.py`. Reuse B/R2 for F3 and B/BAL for F5; do not retrain them.
+All training, reward costs, checkpoint and development-evaluation settings
+inherit the existing B protocol (two lanes, empty target lane, 100K steps).
+
+| B array indices | Configuration |
+|---|---|
+| 0–4 | F1 |
+| 5–9 | F2 |
+| 10–14 | F4 |
+| 15–19 | F6 |
+| 20–24 | F7 |
+| 25–29 | F8 |
+| 30–34 | F9 |
+
+Each block uses ascending seeds. New output folders are
+`outputs/reward_fixed_sum_armB_F*_100k_seed410*`; existing folders are refused.
+
+### Node-local environment and submission
+
+Use `katana_reward_fixed_sum_armB_local.pbs`, not the old A/C array.
+It stages the maintained environment snapshot into a unique compute-node
+`/tmp` folder, verifies SHA256, then uses its interpreter without sourcing the
+copied activation script. Copy, checksum, extraction and dependency preflight
+have individual 300-second timeouts. The preflight checks local package origins,
+uses isolated font caches and prints stacks every 60 seconds if imports stall.
+Cleanup removes only the job's temporary folder; results remain on scratch.
+This mitigates the previously recorded startup issues; it does not guarantee
+that all cluster hangs are resolved. PBS walltime remains five hours.
+
+Sync the updated project files to Katana first, including the new B runner,
+manifest and two PBS files, updated `run_fixed_sum.py` and collector, and the
+existing packer/headless helpers and experiment dependencies. From the project
+root on Katana:
+
+```bash
+# Only if an existing unchanged snapshot is not already available:
+bash scripts/katana_pack_training_env.sh
+# Use the real Bundle path printed by the packer (not its old retry command):
+export VENV_BUNDLE=/srv/scratch/$USER/venv_archives/highway-env.REPLACE_ME
+qsub -v VENV_BUNDLE scripts/katana_reward_fixed_sum_armB_local.pbs
+```
+
+For one failed B task, after confirming it ended and inspecting/archiving its
+incomplete output folder, use the B-specific retry index:
+
+```bash
+qsub -v VENV_BUNDLE,SWEEP_INDEX=0 scripts/katana_reward_fixed_sum_armB_local_retry.pbs
+```
+
+Training includes original-scene evaluation. Counterfactual evaluation is not
+needed for the training-curves request. After all B jobs finish and source
+folders are available locally, collect to a separate three-arm destination:
+
+```bash
+.venv/bin/python experiments/reward_sensitivity/collect_fixed_sum.py \
+  --include-arm-b --out outputs/reward_fixed_sum_ABC/analysis
+```
+
+Expect 135 conditions: 105 newly trained and 30 reused across A/B/C. With no
+`--include-arm-b`, the collector still handles the original 90 A/C conditions.
+The existing partial preview is historical; regenerate a full three-arm plot
+from the completed collection rather than treating missing B curves as data.

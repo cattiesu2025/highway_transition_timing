@@ -19,7 +19,7 @@ COEFFICIENTS = {
     'F7': (98, 42), 'F8': (105, 35), 'F9': (112, 28),
 }
 REUSED = {'F3': 'R2', 'F5': 'BAL'}
-PREFIX = {'A': 'single_lane_slow_front_fixed', 'C': 'multilane_twolane_occupied_fixed'}
+PREFIX = {'B': 'multilane_twolane_open_fixed', 'A': 'single_lane_slow_front_fixed', 'C': 'multilane_twolane_occupied_fixed'}
 MANIFEST = Path(__file__).with_name('jobs_fixed_sum.json')
 
 
@@ -32,15 +32,15 @@ def condition(arm, variant, seed):
                 total_weight=1.4, group=group, source_variant=REUSED.get(variant, variant))
 
 
-def conditions():
+def conditions(arms=None):
     return [condition(arm, variant, seed)
-            for arm, base in BASE_SEEDS.items() for variant in COEFFICIENTS
+            for arm, base in (BASE_SEEDS if arms is None else arms).items() for variant in COEFFICIENTS
             for seed in range(base, base + 5)]
 
 
-def jobs():
+def jobs(arms=None):
     return [dict(index=i, **job) for i, job in enumerate(
-        job for job in conditions() if job['variant'] not in REUSED)]
+        job for job in conditions(arms) if job['variant'] not in REUSED)]
 
 
 def run_directory(root, job):
@@ -61,15 +61,16 @@ def commands(job, root, phase):
     return sweep.commands(job, root, phase, run_dir=run_directory(root, job))
 
 
-def main(argv=None):
+def main(argv=None, *, task_list=None, manifest=None):
+    tasks = jobs() if task_list is None else task_list
+    manifest = MANIFEST if manifest is None else manifest
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--index', type=int, choices=range(70))
+    parser.add_argument('--index', type=int, choices=range(len(tasks)))
     parser.add_argument('--out-root', type=Path, default=sweep.ROOT / 'outputs')
     parser.add_argument('--phase', choices=('train', 'evaluate'), default='train')
     parser.add_argument('--execute', action='store_true')
-    parser.add_argument('--manifest', type=Path, help='Export the 70 new jobs; no execution required')
+    parser.add_argument('--manifest', type=Path, help='Export the new jobs; no execution required')
     args = parser.parse_args(argv)
-    tasks = jobs()
     if args.manifest:
         args.manifest.parent.mkdir(parents=True, exist_ok=True)
         args.manifest.write_text(json.dumps(tasks, indent=2) + '\n')
@@ -82,7 +83,7 @@ def main(argv=None):
     directory = run_directory(root, job)
     calls = commands(job, root, args.phase)
     if args.execute:
-        if json.loads(MANIFEST.read_text()) != tasks:
+        if json.loads(manifest.read_text()) != tasks:
             raise ValueError('Frozen fixed-sum manifest differs from the configured jobs')
         if args.phase == 'train':
             directory.mkdir(parents=True, exist_ok=False)

@@ -1,0 +1,40 @@
+#!/bin/bash
+# Arm B: 35 new fixed-sum tasks, using a node-local unchanged environment snapshot.
+# Set VENV_BUNDLE to the directory printed by katana_pack_training_env.sh.
+#PBS -N fixed-sum-B-retry
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+: "${SWEEP_INDEX:?Set SWEEP_INDEX to an Arm B index (0-34)}"
+module load python/3.11.3
+: "${VENV_BUNDLE:?Set VENV_BUNDLE to the prepared snapshot directory}"
+test -f "${VENV_BUNDLE}/venv.tar"
+test -f "${VENV_BUNDLE}/venv.tar.sha256"
+local_work=$(mktemp -d "/tmp/highway-retry.${PBS_JOBID%%.*}.XXXXXX")
+trap 'rm -rf -- "$local_work"' EXIT
+export TMPDIR="${local_work}/tmp"
+mkdir -p "$TMPDIR" "${local_work}/venv"
+echo "Staging unchanged environment on $(hostname) at ${local_work}"
+df -h "$local_work"
+timeout --signal=TERM --kill-after=10s 300s \
+  cp "${VENV_BUNDLE}/venv.tar" "${VENV_BUNDLE}/venv.tar.sha256" "$local_work/"
+(cd "$local_work" && timeout --signal=TERM --kill-after=10s 300s sha256sum -c venv.tar.sha256)
+timeout --signal=TERM --kill-after=10s 300s \
+  tar -xf "${local_work}/venv.tar" -C "${local_work}/venv"
+# Do not source the copied activate script: it embeds the original venv path.
+# The base Python module remains identical; console entry-point shebangs are unused.
+export VIRTUAL_ENV="${local_work}/venv"
+export PATH="${VIRTUAL_ENV}/bin:${PATH}"
+export EXPECTED_LOCAL_VENV="$VIRTUAL_ENV"
+export PYTHONNOUSERSITE=1
+unset PYTHONHOME
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+hash -r
+source scripts/katana_headless_setup.sh
+python3 experiments/reward_sensitivity/run_fixed_sum_armB.py \
+  --index "$SWEEP_INDEX" \
+  --out-root "/srv/scratch/${USER}/highway_transition_timing/outputs" \
+  --phase "${SWEEP_PHASE:-train}" --execute

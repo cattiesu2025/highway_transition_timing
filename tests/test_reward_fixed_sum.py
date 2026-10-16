@@ -161,3 +161,37 @@ def test_counterfactual_coverage_is_separate(modules, tmp_path):
     assert collector.counterfactual_status(tasks)[0]['status'] == 'complete'
     path.write_text(path.read_text().replace('no-front,FD,36', 'no-front,FD,35'))
     assert collector.counterfactual_status(tasks)[0]['status'] == 'missing_or_incomplete'
+
+
+def test_arm_b_extension_preserves_original_jobs(modules, monkeypatch, tmp_path):
+    _, fixed, collector, _ = modules
+    b_jobs = fixed.jobs({'B': 4100})
+    manifest = FOLDER / 'jobs_fixed_sum_armB.json'
+    assert b_jobs == json.loads(manifest.read_text())
+    assert fixed.jobs() == json.loads(fixed.MANIFEST.read_text())
+    assert len(b_jobs) == 35
+    assert {(j['variant'], j['seed']) for j in b_jobs} == {
+        (v, seed) for v in ('F1','F2','F4','F6','F7','F8','F9')
+        for seed in range(4100, 4105)}
+    assert len(collector.tasks(tmp_path, include_arm_b=True)) == 135
+    for job in b_jobs:
+        cmd = fixed.commands(job, tmp_path, 'train')[0]
+        assert 'multilane_open_lane_change/run.py' in cmd[1]
+        assert '--target-lane-vehicle' not in cmd
+        assert cmd[cmd.index('--lanes-count') + 1] == '2'
+        assert cmd[cmd.index('--seed') + 1] == str(job['seed'])
+    reused = fixed.condition('B', 'F5', 4100)
+    assert fixed.source_directory(tmp_path, reused).name == 'multilane_twolane_open_fixed_100k_seed4100'
+    calls = []
+    monkeypatch.setattr(fixed.subprocess, 'run', lambda *a, **kw: calls.append(a))
+    args = ['--index','34','--out-root',str(tmp_path)]
+    fixed.main(args, task_list=b_jobs, manifest=manifest)
+    assert not calls and not list(tmp_path.iterdir())
+    fixed.main(args + ['--execute'], task_list=b_jobs, manifest=manifest)
+    assert len(calls) == 1
+    directory = fixed.run_directory(tmp_path,b_jobs[34])
+    assert json.loads((directory / 'sweep_job.json').read_text()) == b_jobs[34]
+    with pytest.raises(FileExistsError):
+        fixed.main(args + ['--execute'], task_list=b_jobs, manifest=manifest)
+    with pytest.raises(SystemExit):
+        fixed.main(['--index','35'], task_list=b_jobs, manifest=manifest)
