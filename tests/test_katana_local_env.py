@@ -100,7 +100,7 @@ def test_capacity_failure_never_extracts_or_runs_child(stage, tmp_path, monkeypa
     monkeypatch.setattr(stage,'run_bounded',lambda *a,**kw: calls.append(a[0]))
     monkeypatch.setattr(stage,'required_space',lambda p:(10**30,1))
     with pytest.raises(RuntimeError,match='Insufficient'):
-        stage.main(['--bundle',str(tmp_path),'--local-root',str(tmp_path),'--','never-run'])
+        stage.main(['--bundle',str(tmp_path),'--local-root',str(tmp_path),'--space-timeout','0','--','never-run'])
     assert len(calls)==1 and calls[0][0]=='sha256sum'
     assert not list(tmp_path.glob('highway-env-job.*'))
 
@@ -116,3 +116,53 @@ def test_recovery_maps_only_missing_indices():
     completed={2,3,12,13,16,17,18,21,22,23,24,25,26}
     assert len(indices)==22 and set(indices)==set(range(35))-completed
     assert '#PBS -J 0-21' in script
+
+
+@pytest.mark.parametrize('recover', [True, False])
+def test_space_wait_rechecks_capacity_and_obeys_deadline(stage, tmp_path, monkeypatch, capsys, recover):
+    clock = [0.0]
+    sleeps = []
+    monkeypatch.setattr(stage.time, 'monotonic', lambda: clock[0])
+    def sleep(seconds):
+        sleeps.append(seconds)
+        clock[0] += seconds
+    monkeypatch.setattr(stage.time, 'sleep', sleep)
+    monkeypatch.setattr(stage.shutil, 'disk_usage', lambda p: SimpleNamespace(
+        free=200 if recover and clock[0] >= 60 else 10))
+    monkeypatch.setattr(stage.os, 'statvfs', lambda p: SimpleNamespace(f_files=1000, f_favail=100))
+    if recover:
+        stage.wait_for_space(tmp_path, 100, 10, timeout=90, interval=60)
+        assert sleeps == [60]
+    else:
+        with pytest.raises(stage.InsufficientSpace, match='bounded wait'):
+            stage.wait_for_space(tmp_path, 100, 10, timeout=90, interval=60)
+        assert sleeps == [60, 30]
+    output = capsys.readouterr().out
+    assert 'node=' in output and 'available=' in output and 'free inodes=' in output
+    assert 'remaining=90.0s' in output
+    assert ('Space ready' if recover else 'Space wait timed out') in output
+
+
+def test_space_wait_handles_inode_recovery(stage, tmp_path, monkeypatch):
+    clock = [0]
+    monkeypatch.setattr(stage.time, 'monotonic', lambda: clock[0])
+    monkeypatch.setattr(stage.time, 'sleep', lambda seconds: clock.__setitem__(0, clock[0]+seconds))
+    monkeypatch.setattr(stage.shutil, 'disk_usage', lambda p: SimpleNamespace(free=1000))
+    monkeypatch.setattr(stage.os, 'statvfs', lambda p: SimpleNamespace(f_files=1000, f_favail=1 if clock[0]==0 else 100))
+    stage.wait_for_space(tmp_path, 100, 10, timeout=120, interval=60)
+    assert clock[0] == 60
+
+
+def test_space_wait_does_not_hide_filesystem_errors(stage, tmp_path, monkeypatch):
+    def broken(path):
+        raise PermissionError('cannot inspect filesystem')
+    monkeypatch.setattr(stage.shutil, 'disk_usage', broken)
+    with pytest.raises(PermissionError):
+        stage.wait_for_space(tmp_path, 1, 1)
+
+
+@pytest.mark.parametrize('option,value', [('--space-timeout','-1'),('--space-timeout','nan'),
+    ('--space-check-interval','0'),('--space-check-interval','inf'),('--lock-timeout','nan')])
+def test_wait_arguments_reject_invalid_values(stage, tmp_path, option, value):
+    with pytest.raises(SystemExit):
+        stage.main(['--bundle',str(tmp_path),option,value,'--','never-run'])

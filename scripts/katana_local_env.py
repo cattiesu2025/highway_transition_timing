@@ -6,17 +6,28 @@ The lock stays held until the child exits and its temporary environment is remov
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import fcntl
 import math
 import os
 from pathlib import Path
 import shutil
 import signal
+import socket
 import stat
 import subprocess
 import tarfile
 import tempfile
 import time
+
+
+class InsufficientSpace(RuntimeError):
+    pass
+
+
+def log_space(message):
+    stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    print(f"[{stamp}] node={socket.gethostname()} {message}", flush=True)
 
 
 class Terminated(RuntimeError):
@@ -87,25 +98,55 @@ def required_space(archive):
 def check_space(root, required_bytes, required_inodes):
     available = shutil.disk_usage(root).free
     fs = os.statvfs(root)
-    print(f'Node space: available={available / 1024**3:.2f} GiB; '
+    log_space(f'Node space: available={available / 1024**3:.2f} GiB; '
           f'required including reserve={required_bytes / 1024**3:.2f} GiB; '
-          f'free inodes={fs.f_favail}; required inodes={required_inodes}', flush=True)
+          f'free inodes={fs.f_favail}; required inodes={required_inodes}')
     if available < required_bytes or (fs.f_files and fs.f_favail < required_inodes):
-        raise RuntimeError('Insufficient node-local space/inodes; refusing extraction before training')
+        raise InsufficientSpace('Insufficient node-local space/inodes; refusing extraction before training')
+
+
+def wait_for_space(root, required_bytes, required_inodes, timeout=1800, interval=60):
+    """Keep the node lock; wait without extracting or creating a training folder."""
+    if not math.isfinite(timeout) or timeout < 0 or not math.isfinite(interval) or interval <= 0:
+        raise ValueError('Space timeout must be finite/nonnegative; interval finite/positive')
+    start = time.monotonic()
+    deadline = start + timeout
+    log_space(f'Space wait started: path={root}; limit={timeout:.0f}s; interval={interval:.0f}s')
+    while True:
+        try:
+            check_space(root, required_bytes, required_inodes)
+        except InsufficientSpace:
+            now = time.monotonic()
+            remaining = max(0, deadline - now)
+            if not remaining:
+                log_space(f'Space wait timed out: elapsed={now-start:.1f}s; '
+                          'no extraction or training started; releasing node lock on exit')
+                raise InsufficientSpace('Insufficient node-local space/inodes after bounded wait')
+            delay = min(interval, remaining)
+            log_space(f'Space unavailable: elapsed={now-start:.1f}s; remaining={remaining:.1f}s; '
+                      f'next check in {delay:.1f}s')
+            time.sleep(delay)
+        else:
+            log_space(f'Space ready: elapsed={time.monotonic()-start:.1f}s; proceeding to extraction')
+            return
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bundle', required=True, type=Path)
     parser.add_argument('--local-root', type=Path, default=Path('/tmp'))
-    parser.add_argument('--lock-timeout', type=float, default=14400)
+    parser.add_argument('--lock-timeout', type=float, default=10800)
+    parser.add_argument('--space-timeout', type=float, default=1800)
+    parser.add_argument('--space-check-interval', type=float, default=60)
     parser.add_argument('command', nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     command = args.command[1:] if args.command[:1] == ['--'] else args.command
     if not command:
         parser.error('A command is required after --')
-    if args.lock_timeout < 0:
-        parser.error('--lock-timeout must be nonnegative')
+    for name in ('lock_timeout', 'space_timeout', 'space_check_interval'):
+        value = getattr(args, name)
+        if not math.isfinite(value) or value < 0 or (name == 'space_check_interval' and value == 0):
+            parser.error(f'Invalid --{name.replace("_", "-")}: {value}')
     bundle = args.bundle.resolve()
     archive = bundle / 'venv.tar'
     if not archive.is_file() or not (bundle / 'venv.tar.sha256').is_file():
@@ -122,7 +163,7 @@ def main(argv=None):
             needed, inodes = required_space(archive)
         finally:
             signal.alarm(0)
-        check_space(args.local_root, needed, inodes)
+        wait_for_space(args.local_root, needed, inodes, args.space_timeout, args.space_check_interval)
         with tempfile.TemporaryDirectory(prefix='highway-env-job.', dir=args.local_root) as work:
             local = Path(work)
             venv = local / 'venv'

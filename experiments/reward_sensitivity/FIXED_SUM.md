@@ -211,7 +211,7 @@ Use `katana_reward_fixed_sum_armB_local.pbs`, not the old A/C array.
 It uses `scripts/katana_local_env.py` (stdlib only, launched with module Python
 `-S`). A per-user, per-node file lock is held throughout extraction, preflight,
 training and cleanup. Other updated B jobs on the same node wait without making
-another environment copy (at most four hours, with progress every minute).
+another environment copy (at most three hours, with progress every minute).
 Jobs on different nodes still run in parallel. Waiting consumes PBS walltime;
 very heavily packed nodes may require a later retry. The lock file is retained
 so all waiters use the same inode; only each job's own temporary environment is
@@ -220,8 +220,9 @@ removed. This does not coordinate other users or older PBS entry points.
 The shared archive is checksum-verified and extracted directly into a unique
 node `/tmp` folder; no second archive copy is stored there. Before extraction,
 the helper estimates allocated file sizes plus 512 MiB headroom and checks
-free bytes and inodes. It fails clearly before training if capacity is
-insufficient. Checksum, archive metadata scanning and extraction each have a
+free bytes and inodes. If capacity is insufficient, it waits up to 30 minutes and rechecks every
+60 seconds while retaining the node lock, then fails clearly before training
+if capacity remains insufficient. Checksum, archive metadata scanning and extraction each have a
 300-second bound. Child process groups are terminated on timeout/TERM before
 cleanup and lock release. The same interpreter-path checks, private font caches,
 and 300-second headless preflight remain. Results stay on scratch, package
@@ -290,3 +291,39 @@ Local validation: 20 tests passed for locking, unsafe lock-path rejection,
 space/inode rejection, real tar extraction, no local archive copy, cleanup on
 success/failure, child timeout, recovery mapping, existing preflight and runner
 guards. PBS shell syntax checks passed. This is not a Katana execution test.
+
+
+### 2026-10-17 — Bounded wait for insufficient node space
+
+Recovery task `9535565[5]` (original B index 7, F2/seed 4102) acquired the
+node lock and passed archive verification on k137, but had only 0.81 GiB
+available versus 1.65 GiB required. It exited before extraction/training.
+This is distinct from the original concurrent environment-copy contention.
+
+The helper now waits for capacity while retaining the node lock. Defaults:
+`--space-timeout 1800`, `--space-check-interval 60`. Each check records UTC
+time, hostname, available/required bytes and inodes in the normal PBS stdout
+log. Wait messages record elapsed/remaining time and the next check delay;
+ready/timeout messages record the final outcome. Timeout creates no environment
+or training directory and releases the node lock. Filesystem errors and
+termination signals still propagate rather than being mistaken for low space.
+No other user's files are removed. Waiting cannot guarantee space will free up.
+
+The default lock wait was reduced from four to three hours. Three hours of
+lock waiting plus 30 minutes of capacity waiting and bounded staging/preflight
+leave more than an hour for training under the existing five-hour PBS limit.
+The B array, recovery and single-task retry automatically use the helper defaults;
+no environment repacking or experiment-setting changes are required.
+
+Validation: 29 related tests passed, covering capacity recovery, inode recovery,
+exact deadline/short final sleep, zero-wait failure, invalid options, filesystem
+error propagation, staging cleanup, node locking and existing runner guards.
+PBS syntax and diff whitespace checks passed. No Katana job was submitted.
+
+Only original B index 7 is still missing from the inspected local results.
+After syncing this change, retry that single task, not the 22-task recovery array:
+
+```bash
+export VENV_BUNDLE=/srv/scratch/$USER/venv_archives/highway-env.2DBNKs
+qsub -v VENV_BUNDLE,SWEEP_INDEX=7 scripts/katana_reward_fixed_sum_armB_local_retry.pbs
+```
