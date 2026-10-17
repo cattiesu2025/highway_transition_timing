@@ -1,13 +1,16 @@
-"""Run one job in an unchanged node-local venv, serializing this user's node jobs.
+"""Run jobs in an unchanged node-local venv.
 
-Invoke with the module Python and -S so staging needs no third-party imports.
-The lock stays held until the child exits and its temporary environment is removed.
+Invoke with module Python and -S (stdlib only). Default legacy mode holds the
+node lock for the child lifetime. --shared-env locks preparation only and
+retains a checksum-keyed cache so children can run concurrently.
 """
 from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
 import fcntl
+import json
+import re
 import math
 import os
 from pathlib import Path
@@ -131,8 +134,75 @@ def wait_for_space(root, required_bytes, required_inodes, timeout=1800, interval
             return
 
 
+def private_directory(path):
+    path.mkdir(mode=0o700, exist_ok=True)
+    info = path.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
+        raise RuntimeError(f'Unsafe cache directory: {path}')
+    return path
+
+
+def prepare_shared_environment(args, bundle, archive):
+    """Publish one verified immutable snapshot per node/user/hash; never evict it here.
+
+    Retaining the cache avoids deleting an environment while another process is
+    importing from it. Only preparation holds the lock; training never does.
+    """
+    checksum = (bundle / 'venv.tar.sha256').read_text().strip()
+    match = re.fullmatch(r'([0-9a-fA-F]{64}) [ *]venv\.tar', checksum)
+    if not match:
+        raise ValueError('Expected one SHA256 entry for venv.tar')
+    digest = match.group(1).lower()
+    cache_root = private_directory(args.local_root / f'highway-shared-env-{os.getuid()}')
+    cache = cache_root / digest
+    with acquire_lock(args.local_root, args.lock_timeout):
+        if cache.exists():
+            private_directory(cache)
+            marker = json.loads((cache / 'ready.json').read_text())
+            if marker != {'sha256': digest, 'version': 1} or not (cache / 'venv' / 'pyvenv.cfg').is_file():
+                raise RuntimeError(f'Invalid shared cache; refusing reuse: {cache}')
+            log_space(f'Shared environment cache hit: {cache}; preparation lock released before child')
+            return cache / 'venv'
+        log_space(f'Shared environment cache miss: {digest}; staging once for this node')
+        run_bounded(['sha256sum', '-c', 'venv.tar.sha256'], cwd=bundle, timeout=300)
+        signal.signal(signal.SIGALRM, terminate)
+        signal.alarm(300)
+        try:
+            needed, inodes = required_space(archive)
+        finally:
+            signal.alarm(0)
+        wait_for_space(args.local_root, needed, inodes, args.space_timeout, args.space_check_interval)
+        with tempfile.TemporaryDirectory(prefix='.staging-', dir=cache_root) as work:
+            staging = Path(work)
+            (staging / 'venv').mkdir()
+            run_bounded(['tar', '-xf', str(archive), '-C', str(staging / 'venv')], timeout=300)
+            if not (staging / 'venv' / 'pyvenv.cfg').is_file():
+                raise RuntimeError('Extracted archive is not a Python venv')
+            (staging / 'ready.json').write_text(json.dumps({'sha256': digest, 'version': 1}))
+            # Atomic publication: waiting jobs never see a partially extracted venv.
+            staging.rename(cache)
+        log_space(f'Shared environment ready: {cache}; preparation lock released before child')
+    return cache / 'venv'
+
+
+def run_shared(args, bundle, archive, command):
+    venv = prepare_shared_environment(args, bundle, archive)
+    # Cache storage is shared; all writable runtime/fontconfig caches remain per-job.
+    with tempfile.TemporaryDirectory(prefix='highway-shared-job.', dir=args.local_root) as work:
+        env = dict(os.environ, VIRTUAL_ENV=str(venv), EXPECTED_LOCAL_VENV=str(venv),
+                   TMPDIR=work, PYTHONNOUSERSITE='1', PYTHONDONTWRITEBYTECODE='1',
+                   PATH=f'{venv}/bin:' + os.environ['PATH'])
+        env.pop('PYTHONHOME', None)
+        log_space(f'Starting concurrent child with shared environment; private TMPDIR={work}')
+        try:
+            run_bounded(command, env=env, timeout=None)
+        finally:
+            log_space('Child finished; removing private job cache only, retaining shared environment')
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--shared-env', action='store_true', help='Reuse a verified node cache; unlock before training')
     parser.add_argument('--bundle', required=True, type=Path)
     parser.add_argument('--local-root', type=Path, default=Path('/tmp'))
     parser.add_argument('--lock-timeout', type=float, default=10800)
@@ -153,6 +223,9 @@ def main(argv=None):
         raise FileNotFoundError('Both venv.tar and venv.tar.sha256 are required')
     for sig in (signal.SIGTERM, signal.SIGINT):
         signal.signal(sig, terminate)
+    if args.shared_env:
+        run_shared(args, bundle, archive, command)
+        return 0
     with acquire_lock(args.local_root, args.lock_timeout):
         # Read the shared archive directly, never copy its 1.2 GB into /tmp.
         run_bounded(['sha256sum', '-c', 'venv.tar.sha256'], cwd=bundle, timeout=300)

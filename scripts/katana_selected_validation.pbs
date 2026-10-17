@@ -13,9 +13,9 @@ module load python/3.11.3
 : "${VENV_BUNDLE:?Set VENV_BUNDLE to the prepared snapshot directory}"
 export PYTHONPATH="${PBS_O_WORKDIR}/src"
 export PYTHONUNBUFFERED=1
-# Hold a per-user node lock throughout extraction, preflight, training and cleanup.
+# Lock preparation only; verified environment is shared, training runs concurrently.
 # The module interpreter uses only stdlib; the child uses the staged interpreter.
-python3 -S scripts/katana_local_env.py --bundle "$VENV_BUNDLE" -- \
+python3 -S scripts/katana_local_env.py --shared-env --bundle "$VENV_BUNDLE" -- \
   bash -c 'set -euo pipefail
     source scripts/katana_headless_setup.sh
     python3 experiments/reward_sensitivity/run_selected_validation.py \

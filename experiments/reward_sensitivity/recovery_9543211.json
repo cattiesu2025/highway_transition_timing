@@ -1,0 +1,271 @@
+{
+  "source_array": "9543211",
+  "expected_successful": 127,
+  "recovery_tasks": [
+    {
+      "index": 42,
+      "reuse": true,
+      "reason": "space_wait_timeout"
+    },
+    {
+      "index": 51,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 52,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 53,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 54,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 55,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 56,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 57,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 59,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 60,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 88,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 89,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 90,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 91,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 92,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 94,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 95,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 98,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 99,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 102,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 103,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 105,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 108,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 112,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 113,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 114,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 115,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 116,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 117,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 118,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 119,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 120,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 122,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 123,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 124,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 125,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 126,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 128,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 135,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 140,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 141,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 142,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 143,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 144,
+      "reuse": true,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 145,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 146,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 147,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 148,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 150,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 154,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 157,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 158,
+      "reuse": false,
+      "reason": "lock_timeout"
+    },
+    {
+      "index": 161,
+      "reuse": true,
+      "reason": "lock_timeout"
+    }
+  ]
+}

@@ -58,3 +58,19 @@ def test_reused_models_never_trigger_training(validation,tmp_path,monkeypatch):
     with pytest.raises(FileNotFoundError):
         v.main(['--index','0','--out-root',str(tmp_path),'--execute'])
     assert not calls and not list(tmp_path.iterdir())
+
+
+def test_recovery_mapping_and_shared_pbs(validation):
+    plan=json.loads((FOLDER/'recovery_9543211.json').read_text())
+    entries=plan['recovery_tasks']
+    indices=[r['index'] for r in entries]
+    assert len(indices)==len(set(indices))==53
+    assert sum(r['reuse'] for r in entries)==14
+    assert sum(r['reason']=='lock_timeout' for r in entries)==52
+    assert sum(r['reason']=='space_wait_timeout' for r in entries)==1
+    for r in entries:assert validation.jobs()[r['index']]['reuse']==r['reuse']
+    script=(ROOT/'scripts/katana_selected_validation_recover.pbs').read_text()
+    assert [int(x) for x in script.split('missing=(',1)[1].split(')',1)[0].split()]==indices
+    assert '#PBS -J 0-52' in script
+    for name in ('katana_selected_validation.pbs','katana_selected_validation_retry.pbs'):
+        assert '--shared-env' in (ROOT/'scripts'/name).read_text()

@@ -44,7 +44,9 @@ Sync this runner/manifest/collector, both new PBS files, existing experiment
 code, and the updated `scripts/katana_local_env.py` (including bounded space
 waiting), plus headless helpers. Reuse the unchanged environment snapshot.
 The PBS files request 4 CPUs / 16 GB / six hours per task, and use node-local
-extraction, same-user node locking, 30-minute space waiting and logged checks.
+extraction, a checksum-keyed shared environment, preparation-only node locking,
+30-minute space waiting and logged checks. Each job keeps private runtime caches;
+training and evaluation do not hold the preparation lock.
 
 ```bash
 export VENV_BUNDLE=/srv/scratch/$USER/venv_archives/highway-env.2DBNKs
@@ -97,3 +99,56 @@ fail collection. `figures_ready` is true only at full coverage.
 Validation setup: 45 existing models passed reuse verification; unit tests and
 local incomplete collection check are software validation, not new training or
 behavioral results. No cluster job has been submitted from this workstation.
+
+
+## 2026-10-18 — Shared environment and 53-task recovery
+
+Audit of array 9543211 (180 logs) found 127 successes, 52 three-hour node-lock
+wait timeouts, and one 30-minute space wait timeout (index 42 on k137, 0.81 GiB
+available versus 1.65 GiB needed). All 53 failures occurred before experiment
+startup: 39 new training tasks and 14 reused-model evaluation tasks. Frozen
+indices and failure types are recorded in `recovery_9543211.json`.
+
+The previous full-job lock prevented simultaneous imports/training even when
+the node had enough CPU and memory. The selected-validation PBS files now pass
+`--shared-env`. Under the preparation lock, the helper validates the archive
+checksum, extracts once, and atomically publishes a per-user, per-node cache
+keyed by the snapshot SHA256. Cache hits use the published ready marker and
+skip re-extraction. The preparation lock is released before headless preflight,
+training and evaluation. Thus the scheduler's allocated tasks run concurrently.
+
+Each task still gets its own TMPDIR, fontconfig and runtime caches; Python
+bytecode writes are disabled for shared-environment children. Child exit or
+failure cleans only that task's private directory. The verified environment is
+retained for later jobs, not automatically deleted while another job may use
+it. Do not modify packages in the shared cache. It remains until node cleanup
+or deliberate removal when no jobs use it. Different snapshot hashes use
+separate caches; capacity remains bounded by the node filesystem. Normal
+staging failures remove their unpublished temporary directory; hard kill/node
+failure may leave an unpublished staging directory, which is never reused.
+Do not manually remove cache directories while jobs are active.
+
+Only this validation array and its retry/recovery entry points opt into shared
+mode. Other existing PBS scripts retain legacy behavior. Avoid running legacy
+and shared environment jobs on the same node concurrently because they use
+the same preparation lock. Space checking/waiting and package-origin preflight
+remain in place. This fixes training serialization, not unrelated consumption
+of node disk space: k137-like shortages can still time out and will be logged.
+
+After syncing the updated helper, both validation PBS files, and the new
+recovery PBS, reuse the unchanged snapshot and submit only:
+
+```bash
+export VENV_BUNDLE=/srv/scratch/$USER/venv_archives/highway-env.2DBNKs
+qsub -v VENV_BUNDLE scripts/katana_selected_validation_recover.pbs
+```
+
+Recovery slots 0–52 map to original validation indices. The log prints both.
+The reused-model jobs automatically evaluate only; new jobs train then evaluate.
+The runner's existing-directory protection remains, so a completed model is
+never silently retrained. Do not rerun the full 180-task array.
+
+Validation: 36 tests passed, including two real concurrent child processes
+sharing a single extraction while keeping separate runtime directories,
+cleanup after child/extraction failure, recovery mapping and existing guards.
+PBS syntax and diff whitespace checks passed. No cluster submission performed.
