@@ -2,6 +2,10 @@
 
 独立开发 pilot；设计见 [DESIGN.md](DESIGN.md)。不更改原 A/B/C 或 held-out v2。
 
+## Broad-distance retraining v2
+
+新一轮重训协议与命令见 [BROAD_V2.md](BROAD_V2.md)：白车距离 40–150 m，独立输出前缀，9 个全新初始化的 100k-step 模型。Katana 提交 `qsub scripts/katana_larger_target_gap_broad_v2.pbs`；收集时使用 `collect.py --profile broad-v2`。`by_distance.csv` 按白车距离报告发生率和时间，未观察到换道及碰撞均保留。下方 v1 命令仍可复现原 pilot。
+
 ## Frozen pilot v1
 
 - 9 个模型：seed 5200、5201、5202 × FD/BAL/SP，index 按 seed 优先依次映射 0–8。

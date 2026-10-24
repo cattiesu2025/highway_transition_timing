@@ -74,3 +74,48 @@ def test_real_scene_observation_and_fixed_identity_after_change():
         assert removed['lg_target_more_space'] == ''
     finally:
         env.close()
+
+
+def test_broad_profile_sampling_and_pairing():
+    _, m = pilot.load_modules()
+    config = m.ExperimentConfig(seed=5200, target_lane_vehicle=True)
+    scenes = [pilot.training_spec(m, i, config, 'broad-v2') for i in range(1000)]
+    again = [pilot.training_spec(m, i, config, 'broad-v2') for i in range(1000)]
+    assert scenes == again
+    assert min(s.front_distance for s in scenes) < 45
+    assert max(s.front_distance for s in scenes) > 145
+    for s in scenes:
+        assert 40 <= s.front_distance <= 150
+        assert 30 - 1e-6 <= s.target_lane_gap - s.front_distance <= 80 + 1e-6
+        assert s.target_lane_gap <= 195
+    for start in range(0, 1000, 10):
+        assert Counter(s.scenario_type for s in scenes[start:start + 10]) == {
+            'larger_gap_slow': 6, 'larger_gap_no_front': 2, 'larger_gap_matched': 2}
+    # Distances span the whole range, not a boundary-only curriculum.
+    assert sum(s.front_distance < 90 for s in scenes) > 300
+    assert sum(s.front_distance >= 120 for s in scenes) > 150
+    pilot.install(m, 'broad-v2')
+    assert m.make_training_spec(0, config) == scenes[0]
+    assert pilot.training_spec(m, 0, config).front_distance <= 80
+
+
+def test_broad_grid_and_far_visibility():
+    _, m = pilot.load_modules()
+    m.configure_headless_runtime()
+    pilot.install(m, 'broad-v2')
+    config = m.ExperimentConfig(target_lane_vehicle=True, duration=20, evaluation_duration=20)
+    grid = pilot.eval_specs(m, config, 'broad-v2')
+    assert len({(s.front_distance, s.target_lane_gap, s.front_speed) for s in grid}) == 36
+    assert {s.front_distance for s in grid} == {45, 60, 90, 120, 135, 150}
+    assert max(s.target_lane_gap for s in grid) == 195
+    env = m.make_env('FD', config, training=False)
+    try:
+        env.reset(seed=grid[-1].exposure_seed)
+        obs = m.apply_open_lane_scene(env, grid[-1])
+        assert obs[:, 0].sum() == 3
+        assert not (abs(obs[1:3, 1]) >= 1).any()
+        state = m.extract_diagnostics(env)
+        assert state['lg_target_visible']
+        assert state['lg_target_center_distance'] == 195
+    finally:
+        env.close()
