@@ -1,0 +1,418 @@
+{
+  "date_local": "2026-10-26",
+  "timezone": "Australia/Sydney",
+  "job_id": "9615815[].kman.restech.unsw.edu.au",
+  "last_observed_state": "Queued:0 Running:9; all nine logs show gradient updates",
+  "queue": "cse12",
+  "remote_snapshot": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/arm_c_distance_pilot_20261026",
+  "remote_output_root": "/srv/scratch/z5535967/highway_transition_timing/outputs",
+  "source_archive_sha256": "cb74df8033e6b668170d552952cec647834c51a21332ef2daa9ddbd128ea6c50",
+  "environment_bundle": "/srv/scratch/z5535967/venv_archives/highway-env.2DBNKs",
+  "environment_archive_sha256": "3aa3e0d91b08397e0a8a16a4d7864d490255d98e943d38eaa1b84de73cfe6480",
+  "timesteps_per_model": 100000,
+  "checkpoint_every": 5000,
+  "evaluation_duration_seconds": 120,
+  "geometry_profile": "distance-affine-v1",
+  "jobs": [
+    {
+      "index": 0,
+      "agent": "FD",
+      "variant": "F1",
+      "seed": 4200
+    },
+    {
+      "index": 1,
+      "agent": "FD",
+      "variant": "F1",
+      "seed": 4201
+    },
+    {
+      "index": 2,
+      "agent": "FD",
+      "variant": "F1",
+      "seed": 4202
+    },
+    {
+      "index": 3,
+      "agent": "BAL",
+      "variant": "F4",
+      "seed": 4200
+    },
+    {
+      "index": 4,
+      "agent": "BAL",
+      "variant": "F4",
+      "seed": 4201
+    },
+    {
+      "index": 5,
+      "agent": "BAL",
+      "variant": "F4",
+      "seed": 4202
+    },
+    {
+      "index": 6,
+      "agent": "SP",
+      "variant": "F7",
+      "seed": 4200
+    },
+    {
+      "index": 7,
+      "agent": "SP",
+      "variant": "F7",
+      "seed": 4201
+    },
+    {
+      "index": 8,
+      "agent": "SP",
+      "variant": "F7",
+      "seed": 4202
+    }
+  ],
+  "requested_total_models": 60,
+  "remaining_submission": {
+    "job_id": "9615837[].kman.restech.unsw.edu.au",
+    "date_local": "2026-10-26",
+    "launcher": "scripts/katana_arm_c_distance_remaining.pbs",
+    "launcher_sha256": "ebd7a8495b9c467dcaac78951f9c411f292268acb85b86e72cac3a43043a2ce1",
+    "same_source_snapshot": true,
+    "jobs": [
+      {
+        "index": 0,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4203
+      },
+      {
+        "index": 1,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4204
+      },
+      {
+        "index": 2,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4205
+      },
+      {
+        "index": 3,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4206
+      },
+      {
+        "index": 4,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4207
+      },
+      {
+        "index": 5,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4208
+      },
+      {
+        "index": 6,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4209
+      },
+      {
+        "index": 7,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4210
+      },
+      {
+        "index": 8,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4211
+      },
+      {
+        "index": 9,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4212
+      },
+      {
+        "index": 10,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4213
+      },
+      {
+        "index": 11,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4214
+      },
+      {
+        "index": 12,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4215
+      },
+      {
+        "index": 13,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4216
+      },
+      {
+        "index": 14,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4217
+      },
+      {
+        "index": 15,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4218
+      },
+      {
+        "index": 16,
+        "agent": "FD",
+        "variant": "F1",
+        "seed": 4219
+      },
+      {
+        "index": 17,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4203
+      },
+      {
+        "index": 18,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4204
+      },
+      {
+        "index": 19,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4205
+      },
+      {
+        "index": 20,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4206
+      },
+      {
+        "index": 21,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4207
+      },
+      {
+        "index": 22,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4208
+      },
+      {
+        "index": 23,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4209
+      },
+      {
+        "index": 24,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4210
+      },
+      {
+        "index": 25,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4211
+      },
+      {
+        "index": 26,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4212
+      },
+      {
+        "index": 27,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4213
+      },
+      {
+        "index": 28,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4214
+      },
+      {
+        "index": 29,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4215
+      },
+      {
+        "index": 30,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4216
+      },
+      {
+        "index": 31,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4217
+      },
+      {
+        "index": 32,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4218
+      },
+      {
+        "index": 33,
+        "agent": "BAL",
+        "variant": "F4",
+        "seed": 4219
+      },
+      {
+        "index": 34,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4203
+      },
+      {
+        "index": 35,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4204
+      },
+      {
+        "index": 36,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4205
+      },
+      {
+        "index": 37,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4206
+      },
+      {
+        "index": 38,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4207
+      },
+      {
+        "index": 39,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4208
+      },
+      {
+        "index": 40,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4209
+      },
+      {
+        "index": 41,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4210
+      },
+      {
+        "index": 42,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4211
+      },
+      {
+        "index": 43,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4212
+      },
+      {
+        "index": 44,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4213
+      },
+      {
+        "index": 45,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4214
+      },
+      {
+        "index": 46,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4215
+      },
+      {
+        "index": 47,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4216
+      },
+      {
+        "index": 48,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4217
+      },
+      {
+        "index": 49,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4218
+      },
+      {
+        "index": 50,
+        "agent": "SP",
+        "variant": "F7",
+        "seed": 4219
+      }
+    ],
+    "last_observed_state": "Queued:51 Running:0"
+  },
+  "final_check": {
+    "training_100k_completed": 60,
+    "complete": 58,
+    "failed_selection": 2,
+    "active_jobs": 0,
+    "completed_artifact_issues": [],
+    "failures": [
+      {
+        "agent": "FD",
+        "seed": 4209,
+        "checkpoints_checked": 20,
+        "reason": "No eligible checkpoint",
+        "gate_failure_counts": {
+          "no_front_specificity": 20,
+          "matched_speed_front_specificity": 8
+        }
+      },
+      {
+        "agent": "BAL",
+        "seed": 4205,
+        "checkpoints_checked": 20,
+        "reason": "No eligible checkpoint",
+        "gate_failure_counts": {
+          "no_front_specificity": 13,
+          "matched_speed_front_specificity": 14
+        }
+      }
+    ]
+  }
+}

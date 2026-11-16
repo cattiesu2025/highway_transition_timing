@@ -95,3 +95,13 @@
 - 新增实验内 `scripts/katana_overtake_local_retry.pbs`：复用既有环境快照方案，校验归档并解包至节点 `/tmp`，明确切换 PATH/VIRTUAL_ENV，验证关键依赖来源；保持基础 Python module、奖励参数及训练命令不变。
 - 新增 `scripts/pack_training_env.sh`，复用项目打包脚本并打印本实验正确的提交命令。新输出名默认 `full_B_BAL_S10_seed4190_local_retry1`，历史失败目录不覆盖。日志仍直接写入 startup_logs。
 - 本地验证包含 PBS/bash 语法、重试训练命令与常规脚本一致、环境来源和 checksum 检查配置；未远程提交，不能声称集群故障已解决。若仍在归档复制或基础 module 读取阶段阻塞，应结合日志交由集群管理员检查存储。
+
+
+## 2026-10-14 — 100K 结果检查与最终策略评估
+
+- 检查用户下载的 job9510008 / B BAL S10 seed4190：100K 步完整，模型 ZIP 和训练源文件 hash 核对通过；348 次成功入库，8,871 次成功样本抽取、341 个不同成功 transition 被抽取。
+- 带探索训练：有前车且已结束 episode 成功 348/811；末 20K 步 slow-front 为 74/79。这不是最终策略评估成功率。
+- 新增 evaluate_trained.py：Arm B 确定性评估，记录完整阶段、onset、动作与碰撞；支持原 development 36 场景和训练末期 slow-front 原场景复测。加载后逐项验证保存与加载的策略权重一致，避免跨 Python minor 的训练 replay 类反序列化崩溃。
+- 匹配模拟器与 Gym 版本后，development 完整成功为 0/36（20 s 与 120 s），训练末期原场景为 0/79（20 s）；全部完成左侧超越，但没有返回原车道，无碰撞。当前只能确认奖励已参与学习，不能确认最终策略学会完整超车或奖励改变了 onset。
+- 本地 Python/Torch 仍与集群不同，已记录复核边界；没有修改奖励、换道惩罚或运行新训练。完整证据、复现命令与后续建议见 [结果报告](RESULTS_B_BAL_S10_100K.md)。
+- 验证：9 项 pilot 测试通过；两套最终评估完成并复核源文件 hash、模型权重一致性与阶段计数；git diff whitespace 检查通过。

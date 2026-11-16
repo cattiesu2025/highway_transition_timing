@@ -1,0 +1,227 @@
+[
+  {
+    "index": 0,
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4100,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 1,
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4101,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 2,
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4102,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 3,
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4103,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 4,
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4104,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 5,
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4100,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 6,
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4101,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 7,
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4102,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 8,
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4103,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 9,
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4104,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 10,
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4200,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 11,
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4201,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 12,
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4202,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 13,
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4203,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 14,
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4204,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 15,
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4200,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 16,
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4201,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 17,
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4202,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 18,
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4203,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 19,
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4204,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 20,
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4200,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 21,
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4201,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 22,
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4202,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 23,
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4203,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 24,
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4204,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  }
+]

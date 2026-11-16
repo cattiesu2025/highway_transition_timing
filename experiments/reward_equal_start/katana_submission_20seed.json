@@ -1,0 +1,70 @@
+{
+  "date_local": "2026-11-13",
+  "timezone": "Australia/Sydney",
+  "job_id": {
+    "0-359": "9760987[].kman.restech.unsw.edu.au",
+    "360-399": "9761720[].kman.restech.unsw.edu.au"
+  },
+  "array_indices": "0-399",
+  "queue": "cse12",
+  "pbs_script": "scripts/katana_reward_equal_20seed.pbs",
+  "runner": "experiments/reward_equal_start/run_20seed.py",
+  "manifest": "experiments/reward_equal_start/jobs_20seed.json",
+  "remote_snapshot": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/reward_equal_20seed_20261113",
+  "remote_output_root": "/srv/scratch/z5535967/highway_transition_timing/outputs",
+  "source_archive_sha256": "3099e380c775a593ddc815b0d3bc50c55c7adfc8fc2430de5a72a0ba1726026d",
+  "environment_bundle": "/srv/scratch/z5535967/venv_archives/highway-env.2DBNKs",
+  "seeds": {
+    "A": "3100-3119",
+    "B": "4100-4119",
+    "C": "4200-4219",
+    "D": "4200-4219"
+  },
+  "layout": {
+    "0-79": "BAL A/B/C/D, shared by ES and FL",
+    "80-239": "ES SP/FD A/B/C/D",
+    "240-359": "FL SP/FD A/B/D",
+    "360-399": "FL SP/FD Arm C (submitted 2026-11-13: on 20 seeds Arm C t=0 weights give first-log SP 55.60, BAL 56.41, FD 57.04, so it gets its own FL weights)"
+  },
+  "weights_source": {
+    "ES": "equal_start_weights.json (A/C) and equal_start_weights_BD.json (B/D): 2000 random-policy episodes, independent of training seeds",
+    "FL": "outputs/reward_equal_start/first_log_weights_20seed.json: first 4 episodes of each of 20 seeds per arm; replay matched all 60 existing 5-seed first logs (max error 6e-7)"
+  },
+  "output_names": {
+    "A/B/C": "reward_equal20_arm<A|B|C>_<BAL|ES-SP|ES-FD|FL-SP|FL-FD>_100k_seed<seed>",
+    "D": "arm_c_distance-affine-v1_R20-<BAL|ES-SP|ES-FD|FL-SP|FL-FD>_100k_seed<seed>"
+  },
+  "pre_submission": "Katana outputs/ (693 dirs, 57G) synced to local outputs/ with no missing or truncated files, then deleted. 20 twolane_selected exposures.csv differed; Katana copies kept locally as exposures.csv.katana. Submission is not evidence of completed training.",
+  "last_observed_state": "2026-11-14 11:44 AEDT: all 400 tasks finished. 394 complete (main model + evaluation). 6 Arm D runs trained to 100k but failed selection: no checkpoint passed the eligibility gate.",
+  "gate_failed": {
+    "runs": [
+      {
+        "index": 204,
+        "run": "arm_c_distance-affine-v1_R20-ES-SP_100k_seed4204"
+      },
+      {
+        "index": 207,
+        "run": "arm_c_distance-affine-v1_R20-ES-SP_100k_seed4207"
+      },
+      {
+        "index": 209,
+        "run": "arm_c_distance-affine-v1_R20-ES-SP_100k_seed4209"
+      },
+      {
+        "index": 324,
+        "run": "arm_c_distance-affine-v1_R20-FL-SP_100k_seed4204"
+      },
+      {
+        "index": 327,
+        "run": "arm_c_distance-affine-v1_R20-FL-SP_100k_seed4207"
+      },
+      {
+        "index": 356,
+        "run": "arm_c_distance-affine-v1_R20-FL-FD_100k_seed4216"
+      }
+    ],
+    "scientific_result": false,
+    "reason": "No-front specificity fails at 20/20 checkpoints for the five SP runs and 18/20 for FL-FD 4216 (the agent also changes lanes with no front vehicle); the remaining checkpoints fail matched-speed specificity. Safety and estimability pass at every checkpoint. Same failure type as 5-seed ES-SP 4204 and original Arm D F1 4209 / F4 4205.",
+    "action": "Not retrained or replaced, as in the earlier Arm D protocol. Training logs remain usable for training-return curves."
+  }
+}

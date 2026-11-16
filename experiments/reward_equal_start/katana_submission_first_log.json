@@ -1,0 +1,356 @@
+{
+  "date_local": "2026-11-08",
+  "timezone": "Australia/Sydney",
+  "job_id": "9714738[].kman.restech.unsw.edu.au",
+  "queue": "cse12",
+  "pbs_script": "scripts/katana_reward_first_log.pbs",
+  "runner": "experiments/reward_equal_start/run_first_log.py",
+  "remote_snapshot": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/reward_first_log_20261108",
+  "remote_output_root": "/srv/scratch/z5535967/highway_transition_timing/outputs",
+  "source_archive_sha256": "d12eb49900c8973ac88b50d4ed460c9168e51167912d87a4d78c69f07efb347d",
+  "environment_bundle": "/srv/scratch/z5535967/venv_archives/highway-env.2DBNKs",
+  "timesteps_per_model": 100000,
+  "checkpoint_every": 5000,
+  "evaluation_duration_seconds": 120,
+  "weights_source": "outputs/reward_equal_start/first_log_weights.json: first 4 training episodes (= first SB3 log) of each paired seed, replayed on the training stack; seed-mean first-log reward equal for SP/BAL/FD",
+  "output_names": {
+    "A": "reward_first_log_armA_<SP|FD>_100k_seed<3100-3104>",
+    "B": "reward_first_log_armB_<SP|FD>_100k_seed<4100-4104>",
+    "D": "arm_c_distance-affine-v1_FL-<SP|FD>_100k_seed<4200-4204>"
+  },
+  "reused_not_trained": "BAL (0.70, 0.70): A single_lane_slow_front_fixed_100k_seed310[0-4]; B multilane_twolane_open_fixed_100k_seed410[0-4]; D arm_c_distance-affine-v1_ES-BAL_100k_seed420[0-4]. Arm C keeps reward_equal_start_armC_* (first-log means SP 52.9, BAL 52.8, FD 52.8).",
+  "pre_submission_checks": [
+    "Replay of the first 4 episodes matched the logged first point (step and value, 1e-3) for all 45 existing A/B/D SP/BAL/FD runs",
+    "Frozen 6-decimal weights give equal seed-mean first-log reward to <1e-3 in A, B, D",
+    "Arm D FL-SP seed 4200 smoke run completed locally with the new weights recorded in training_runs.csv",
+    "tests/test_reward_equal_start.py: 27 passed"
+  ],
+  "jobs": [
+    {
+      "index": 0,
+      "arm": "A",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 3100,
+      "speed_weight": 1.020106,
+      "front_distance_weight": 0.510053
+    },
+    {
+      "index": 1,
+      "arm": "A",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 3101,
+      "speed_weight": 1.020106,
+      "front_distance_weight": 0.510053
+    },
+    {
+      "index": 2,
+      "arm": "A",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 3102,
+      "speed_weight": 1.020106,
+      "front_distance_weight": 0.510053
+    },
+    {
+      "index": 3,
+      "arm": "A",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 3103,
+      "speed_weight": 1.020106,
+      "front_distance_weight": 0.510053
+    },
+    {
+      "index": 4,
+      "arm": "A",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 3104,
+      "speed_weight": 1.020106,
+      "front_distance_weight": 0.510053
+    },
+    {
+      "index": 5,
+      "arm": "A",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 3100,
+      "speed_weight": 0.430083,
+      "front_distance_weight": 0.860165
+    },
+    {
+      "index": 6,
+      "arm": "A",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 3101,
+      "speed_weight": 0.430083,
+      "front_distance_weight": 0.860165
+    },
+    {
+      "index": 7,
+      "arm": "A",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 3102,
+      "speed_weight": 0.430083,
+      "front_distance_weight": 0.860165
+    },
+    {
+      "index": 8,
+      "arm": "A",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 3103,
+      "speed_weight": 0.430083,
+      "front_distance_weight": 0.860165
+    },
+    {
+      "index": 9,
+      "arm": "A",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 3104,
+      "speed_weight": 0.430083,
+      "front_distance_weight": 0.860165
+    },
+    {
+      "index": 10,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4100,
+      "speed_weight": 1.091429,
+      "front_distance_weight": 0.545715
+    },
+    {
+      "index": 11,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4101,
+      "speed_weight": 1.091429,
+      "front_distance_weight": 0.545715
+    },
+    {
+      "index": 12,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4102,
+      "speed_weight": 1.091429,
+      "front_distance_weight": 0.545715
+    },
+    {
+      "index": 13,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4103,
+      "speed_weight": 1.091429,
+      "front_distance_weight": 0.545715
+    },
+    {
+      "index": 14,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4104,
+      "speed_weight": 1.091429,
+      "front_distance_weight": 0.545715
+    },
+    {
+      "index": 15,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4100,
+      "speed_weight": 0.407622,
+      "front_distance_weight": 0.815244
+    },
+    {
+      "index": 16,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4101,
+      "speed_weight": 0.407622,
+      "front_distance_weight": 0.815244
+    },
+    {
+      "index": 17,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4102,
+      "speed_weight": 0.407622,
+      "front_distance_weight": 0.815244
+    },
+    {
+      "index": 18,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4103,
+      "speed_weight": 0.407622,
+      "front_distance_weight": 0.815244
+    },
+    {
+      "index": 19,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4104,
+      "speed_weight": 0.407622,
+      "front_distance_weight": 0.815244
+    },
+    {
+      "index": 20,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4200,
+      "speed_weight": 1.103066,
+      "front_distance_weight": 0.551533
+    },
+    {
+      "index": 21,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4201,
+      "speed_weight": 1.103066,
+      "front_distance_weight": 0.551533
+    },
+    {
+      "index": 22,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4202,
+      "speed_weight": 1.103066,
+      "front_distance_weight": 0.551533
+    },
+    {
+      "index": 23,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4203,
+      "speed_weight": 1.103066,
+      "front_distance_weight": 0.551533
+    },
+    {
+      "index": 24,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4204,
+      "speed_weight": 1.103066,
+      "front_distance_weight": 0.551533
+    },
+    {
+      "index": 25,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4200,
+      "speed_weight": 0.404435,
+      "front_distance_weight": 0.80887
+    },
+    {
+      "index": 26,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4201,
+      "speed_weight": 0.404435,
+      "front_distance_weight": 0.80887
+    },
+    {
+      "index": 27,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4202,
+      "speed_weight": 0.404435,
+      "front_distance_weight": 0.80887
+    },
+    {
+      "index": 28,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4203,
+      "speed_weight": 0.404435,
+      "front_distance_weight": 0.80887
+    },
+    {
+      "index": 29,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4204,
+      "speed_weight": 0.404435,
+      "front_distance_weight": 0.80887
+    }
+  ],
+  "retries": [
+    {
+      "job_id": "9715730[].kman.restech.unsw.edu.au",
+      "array": "15-23:8",
+      "indices": [
+        15,
+        23
+      ],
+      "reason": "Original tasks exited after the 30-min bounded space wait on k066/k084 (/tmp 1.61 GiB available, 1.65 GiB required); no output directory had been created"
+    }
+  ],
+  "final_outcome": {
+    "observed": "2026-11-08 21:59 AEDT",
+    "complete_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      25,
+      26,
+      27,
+      28
+    ],
+    "gate_failed": [
+      {
+        "index": 24,
+        "run": "arm_c_distance-affine-v1_FL-SP_100k_seed4204"
+      },
+      {
+        "index": 29,
+        "run": "arm_c_distance-affine-v1_FL-FD_100k_seed4204"
+      }
+    ],
+    "gate_failure_reason": "Training reached ~100k steps; all 20 checkpoints fail gate_no_front_specificity (lane changes with no front vehicle). Same failure as the earlier ES-SP seed 4204 run. Training curves usable; no selected model for onset analysis.",
+    "first_log_check": "All 30 runs: first logged ep_rew_mean equals the pre-submission prediction to <1e-6"
+  }
+}

@@ -1,0 +1,15 @@
+#!/bin/bash
+# Development pilot only: 3 matched seeds x 3 frozen preferences.
+#PBS -N C-distance-pilot
+#PBS -J 0-8
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=07:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+: "${PBS_ARRAY_INDEX:?Expected array index 0-8}"
+if (( PBS_ARRAY_INDEX < 0 || PBS_ARRAY_INDEX > 8 )); then exit 2; fi
+agents=(FD BAL SP)
+export DISTANCE_AGENT="${agents[$((PBS_ARRAY_INDEX / 3))]}"
+export DISTANCE_SEED="$((4200 + PBS_ARRAY_INDEX % 3))"
+exec bash scripts/katana_arm_c_distance_variant.pbs

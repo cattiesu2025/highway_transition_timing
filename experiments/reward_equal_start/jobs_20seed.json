@@ -1,0 +1,4002 @@
+[
+  {
+    "index": 0,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3100,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 1,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3101,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 2,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3102,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 3,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3103,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 4,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3104,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 5,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3105,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 6,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3106,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 7,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3107,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 8,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3108,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 9,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3109,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 10,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3110,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 11,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3111,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 12,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3112,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 13,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3113,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 14,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3114,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 15,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3115,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 16,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3116,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 17,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3117,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 18,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3118,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 19,
+    "design": "BAL",
+    "arm": "A",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 3119,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 20,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4100,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 21,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4101,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 22,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4102,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 23,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4103,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 24,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4104,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 25,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4105,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 26,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4106,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 27,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4107,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 28,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4108,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 29,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4109,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 30,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4110,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 31,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4111,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 32,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4112,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 33,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4113,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 34,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4114,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 35,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4115,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 36,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4116,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 37,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4117,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 38,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4118,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 39,
+    "design": "BAL",
+    "arm": "B",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4119,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 40,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4200,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 41,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4201,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 42,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4202,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 43,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4203,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 44,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4204,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 45,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4205,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 46,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4206,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 47,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4207,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 48,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4208,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 49,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4209,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 50,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4210,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 51,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4211,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 52,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4212,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 53,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4213,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 54,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4214,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 55,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4215,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 56,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4216,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 57,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4217,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 58,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4218,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 59,
+    "design": "BAL",
+    "arm": "C",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4219,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 60,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4200,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 61,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4201,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 62,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4202,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 63,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4203,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 64,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4204,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 65,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4205,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 66,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4206,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 67,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4207,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 68,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4208,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 69,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4209,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 70,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4210,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 71,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4211,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 72,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4212,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 73,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4213,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 74,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4214,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 75,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4215,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 76,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4216,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 77,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4217,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 78,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4218,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 79,
+    "design": "BAL",
+    "arm": "D",
+    "variant": "BAL",
+    "agent": "BAL",
+    "seed": 4219,
+    "speed_weight": 0.7,
+    "front_distance_weight": 0.7
+  },
+  {
+    "index": 80,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3100,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 81,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3101,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 82,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3102,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 83,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3103,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 84,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3104,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 85,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3105,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 86,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3106,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 87,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3107,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 88,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3108,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 89,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3109,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 90,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3110,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 91,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3111,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 92,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3112,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 93,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3113,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 94,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3114,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 95,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3115,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 96,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3116,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 97,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3117,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 98,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3118,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 99,
+    "design": "ES",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3119,
+    "speed_weight": 1.068978,
+    "front_distance_weight": 0.534489
+  },
+  {
+    "index": 100,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3100,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 101,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3101,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 102,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3102,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 103,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3103,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 104,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3104,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 105,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3105,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 106,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3106,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 107,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3107,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 108,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3108,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 109,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3109,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 110,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3110,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 111,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3111,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 112,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3112,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 113,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3113,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 114,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3114,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 115,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3115,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 116,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3116,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 117,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3117,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 118,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3118,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 119,
+    "design": "ES",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3119,
+    "speed_weight": 0.414118,
+    "front_distance_weight": 0.828237
+  },
+  {
+    "index": 120,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4100,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 121,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4101,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 122,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4102,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 123,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4103,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 124,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4104,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 125,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4105,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 126,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4106,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 127,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4107,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 128,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4108,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 129,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4109,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 130,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4110,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 131,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4111,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 132,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4112,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 133,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4113,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 134,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4114,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 135,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4115,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 136,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4116,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 137,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4117,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 138,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4118,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 139,
+    "design": "ES",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4119,
+    "speed_weight": 1.101202,
+    "front_distance_weight": 0.550601
+  },
+  {
+    "index": 140,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4100,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 141,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4101,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 142,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4102,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 143,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4103,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 144,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4104,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 145,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4105,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 146,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4106,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 147,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4107,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 148,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4108,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 149,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4109,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 150,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4110,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 151,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4111,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 152,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4112,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 153,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4113,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 154,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4114,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 155,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4115,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 156,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4116,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 157,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4117,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 158,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4118,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 159,
+    "design": "ES",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4119,
+    "speed_weight": 0.404937,
+    "front_distance_weight": 0.809875
+  },
+  {
+    "index": 160,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4200,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 161,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4201,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 162,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4202,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 163,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4203,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 164,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4204,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 165,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4205,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 166,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4206,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 167,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4207,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 168,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4208,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 169,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4209,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 170,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4210,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 171,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4211,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 172,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4212,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 173,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4213,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 174,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4214,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 175,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4215,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 176,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4216,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 177,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4217,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 178,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4218,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 179,
+    "design": "ES",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4219,
+    "speed_weight": 1.078515,
+    "front_distance_weight": 0.539258
+  },
+  {
+    "index": 180,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4200,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 181,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4201,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 182,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4202,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 183,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4203,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 184,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4204,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 185,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4205,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 186,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4206,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 187,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4207,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 188,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4208,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 189,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4209,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 190,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4210,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 191,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4211,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 192,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4212,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 193,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4213,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 194,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4214,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 195,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4215,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 196,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4216,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 197,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4217,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 198,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4218,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 199,
+    "design": "ES",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4219,
+    "speed_weight": 0.4113,
+    "front_distance_weight": 0.822601
+  },
+  {
+    "index": 200,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4200,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 201,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4201,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 202,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4202,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 203,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4203,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 204,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4204,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 205,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4205,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 206,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4206,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 207,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4207,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 208,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4208,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 209,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4209,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 210,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4210,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 211,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4211,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 212,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4212,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 213,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4213,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 214,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4214,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 215,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4215,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 216,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4216,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 217,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4217,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 218,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4218,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 219,
+    "design": "ES",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4219,
+    "speed_weight": 1.092444,
+    "front_distance_weight": 0.546222
+  },
+  {
+    "index": 220,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4200,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 221,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4201,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 222,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4202,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 223,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4203,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 224,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4204,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 225,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4205,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 226,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4206,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 227,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4207,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 228,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4208,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 229,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4209,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 230,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4210,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 231,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4211,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 232,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4212,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 233,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4213,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 234,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4214,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 235,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4215,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 236,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4216,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 237,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4217,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 238,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4218,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 239,
+    "design": "ES",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4219,
+    "speed_weight": 0.407339,
+    "front_distance_weight": 0.814678
+  },
+  {
+    "index": 240,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3100,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 241,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3101,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 242,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3102,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 243,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3103,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 244,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3104,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 245,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3105,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 246,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3106,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 247,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3107,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 248,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3108,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 249,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3109,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 250,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3110,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 251,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3111,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 252,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3112,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 253,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3113,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 254,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3114,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 255,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3115,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 256,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3116,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 257,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3117,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 258,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3118,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 259,
+    "design": "FL",
+    "arm": "A",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 3119,
+    "speed_weight": 1.047241,
+    "front_distance_weight": 0.52362
+  },
+  {
+    "index": 260,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3100,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 261,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3101,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 262,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3102,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 263,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3103,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 264,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3104,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 265,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3105,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 266,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3106,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 267,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3107,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 268,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3108,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 269,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3109,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 270,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3110,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 271,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3111,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 272,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3112,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 273,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3113,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 274,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3114,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 275,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3115,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 276,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3116,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 277,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3117,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 278,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3118,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 279,
+    "design": "FL",
+    "arm": "A",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 3119,
+    "speed_weight": 0.420887,
+    "front_distance_weight": 0.841774
+  },
+  {
+    "index": 280,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4100,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 281,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4101,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 282,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4102,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 283,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4103,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 284,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4104,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 285,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4105,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 286,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4106,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 287,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4107,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 288,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4108,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 289,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4109,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 290,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4110,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 291,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4111,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 292,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4112,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 293,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4113,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 294,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4114,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 295,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4115,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 296,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4116,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 297,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4117,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 298,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4118,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 299,
+    "design": "FL",
+    "arm": "B",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4119,
+    "speed_weight": 1.099835,
+    "front_distance_weight": 0.549917
+  },
+  {
+    "index": 300,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4100,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 301,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4101,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 302,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4102,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 303,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4103,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 304,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4104,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 305,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4105,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 306,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4106,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 307,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4107,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 308,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4108,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 309,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4109,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 310,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4110,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 311,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4111,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 312,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4112,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 313,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4113,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 314,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4114,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 315,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4115,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 316,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4116,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 317,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4117,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 318,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4118,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 319,
+    "design": "FL",
+    "arm": "B",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4119,
+    "speed_weight": 0.405308,
+    "front_distance_weight": 0.810616
+  },
+  {
+    "index": 320,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4200,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 321,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4201,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 322,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4202,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 323,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4203,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 324,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4204,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 325,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4205,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 326,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4206,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 327,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4207,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 328,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4208,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 329,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4209,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 330,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4210,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 331,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4211,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 332,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4212,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 333,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4213,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 334,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4214,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 335,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4215,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 336,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4216,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 337,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4217,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 338,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4218,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 339,
+    "design": "FL",
+    "arm": "D",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4219,
+    "speed_weight": 1.106991,
+    "front_distance_weight": 0.553496
+  },
+  {
+    "index": 340,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4200,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 341,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4201,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 342,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4202,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 343,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4203,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 344,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4204,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 345,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4205,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 346,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4206,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 347,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4207,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 348,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4208,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 349,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4209,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 350,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4210,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 351,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4211,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 352,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4212,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 353,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4213,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 354,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4214,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 355,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4215,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 356,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4216,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 357,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4217,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 358,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4218,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 359,
+    "design": "FL",
+    "arm": "D",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4219,
+    "speed_weight": 0.403386,
+    "front_distance_weight": 0.806772
+  },
+  {
+    "index": 360,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4200,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 361,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4201,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 362,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4202,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 363,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4203,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 364,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4204,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 365,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4205,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 366,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4206,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 367,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4207,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 368,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4208,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 369,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4209,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 370,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4210,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 371,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4211,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 372,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4212,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 373,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4213,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 374,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4214,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 375,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4215,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 376,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4216,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 377,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4217,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 378,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4218,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 379,
+    "design": "FL",
+    "arm": "C",
+    "variant": "SP",
+    "agent": "SP",
+    "seed": 4219,
+    "speed_weight": 1.090537,
+    "front_distance_weight": 0.545269
+  },
+  {
+    "index": 380,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4200,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 381,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4201,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 382,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4202,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 383,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4203,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 384,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4204,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 385,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4205,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 386,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4206,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 387,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4207,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 388,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4208,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 389,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4209,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 390,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4210,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 391,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4211,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 392,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4212,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 393,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4213,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 394,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4214,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 395,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4215,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 396,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4216,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 397,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4217,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 398,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4218,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  },
+  {
+    "index": 399,
+    "design": "FL",
+    "arm": "C",
+    "variant": "FD",
+    "agent": "FD",
+    "seed": 4219,
+    "speed_weight": 0.407871,
+    "front_distance_weight": 0.815742
+  }
+]

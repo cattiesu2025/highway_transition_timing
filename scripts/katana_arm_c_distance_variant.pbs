@@ -1,0 +1,26 @@
+#!/bin/bash
+# One new C-distance model; uses the established unchanged node-local env snapshot.
+#PBS -N C-distance
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=07:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+: "${VENV_BUNDLE:?Set VENV_BUNDLE to the prepared environment snapshot}"
+DISTANCE_OUTPUT_ROOT="/srv/scratch/${USER}/highway_transition_timing/outputs"
+mkdir -p "${DISTANCE_OUTPUT_ROOT}/arm_c_distance_launch_logs"
+exec >"${DISTANCE_OUTPUT_ROOT}/arm_c_distance_launch_logs/${PBS_JOBID}.log" 2>&1
+echo "Job ${PBS_JOBID}; node $(hostname); started $(date -Iseconds)"
+module load python/3.11.3
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+export OMP_NUM_THREADS=1
+export OPENBLAS_NUM_THREADS=1
+python3 -S scripts/katana_local_env.py --shared-env --bundle "$VENV_BUNDLE" -- \
+  bash -c 'set -euo pipefail
+    source scripts/katana_headless_setup.sh
+    python3 experiments/arm_c_distance_variant/run.py \
+      --mode train --agent "${DISTANCE_AGENT:-BAL}" --seed "${DISTANCE_SEED:-4200}" \
+      --out-root "/srv/scratch/${USER}/highway_transition_timing/outputs" \
+      --baseline-root "/srv/scratch/${USER}/highway_transition_timing/outputs" --execute
+  '

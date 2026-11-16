@@ -1,0 +1,379 @@
+{
+  "date_local": "2026-11-08",
+  "timezone": "Australia/Sydney",
+  "job_id": "9701102[].kman.restech.unsw.edu.au",
+  "last_observed_state": "2026-11-08 11:42 AEDT: all 25 tasks finished. 24 complete (training ~100k steps, selected checkpoint, evaluation present). Index 14 (Arm D ES-SP seed 4204) trained 99,909 steps but status failed: no checkpoint passed the eligibility gate.",
+  "queue": "cse12",
+  "pbs_script": "scripts/katana_reward_equal_start_bd.pbs",
+  "runner": "experiments/reward_equal_start/run_bd.py",
+  "remote_snapshot": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/reward_equal_start_bd_20261108",
+  "remote_output_root": "/srv/scratch/z5535967/highway_transition_timing/outputs",
+  "source_archive_sha256": "a3a60dbe102440479a5bdcde11e5bedd6c5d613a1f5f82cceac80dfbffaa270a",
+  "environment_bundle": "/srv/scratch/z5535967/venv_archives/highway-env.2DBNKs",
+  "timesteps_per_model": 100000,
+  "checkpoint_every": 5000,
+  "evaluation_duration_seconds": 120,
+  "weights_source": "outputs/reward_equal_start/equal_start_weights_BD.json (2000 random-policy episodes per arm, reference seed 9200)",
+  "output_names": {
+    "B": "reward_equal_start_armB_<SP|FD>_100k_seed<4100-4104>",
+    "D": "arm_c_distance-affine-v1_ES-<SP|FD|BAL>_100k_seed<4200-4204>"
+  },
+  "reused_not_trained": "Arm B BAL (0.70, 0.70) from multilane_twolane_open_fixed_100k_seed410[0-4]; Arm D has no such model, so its BAL is trained here",
+  "pre_submission_checks": [
+    "Arm B and D random-policy replay matched real training monitor.csv for 8 episodes each",
+    "Arm D custom-weight smoke run completed locally with weights recorded in protocol.json and training_runs.csv",
+    "Reused Arm B BAL training protocol matches the new jobs apart from weights"
+  ],
+  "jobs": [
+    {
+      "index": 0,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4100,
+      "speed_weight": 1.101202,
+      "front_distance_weight": 0.550601
+    },
+    {
+      "index": 1,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4101,
+      "speed_weight": 1.101202,
+      "front_distance_weight": 0.550601
+    },
+    {
+      "index": 2,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4102,
+      "speed_weight": 1.101202,
+      "front_distance_weight": 0.550601
+    },
+    {
+      "index": 3,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4103,
+      "speed_weight": 1.101202,
+      "front_distance_weight": 0.550601
+    },
+    {
+      "index": 4,
+      "arm": "B",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4104,
+      "speed_weight": 1.101202,
+      "front_distance_weight": 0.550601
+    },
+    {
+      "index": 5,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4100,
+      "speed_weight": 0.404937,
+      "front_distance_weight": 0.809875
+    },
+    {
+      "index": 6,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4101,
+      "speed_weight": 0.404937,
+      "front_distance_weight": 0.809875
+    },
+    {
+      "index": 7,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4102,
+      "speed_weight": 0.404937,
+      "front_distance_weight": 0.809875
+    },
+    {
+      "index": 8,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4103,
+      "speed_weight": 0.404937,
+      "front_distance_weight": 0.809875
+    },
+    {
+      "index": 9,
+      "arm": "B",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4104,
+      "speed_weight": 0.404937,
+      "front_distance_weight": 0.809875
+    },
+    {
+      "index": 10,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4200,
+      "speed_weight": 1.092444,
+      "front_distance_weight": 0.546222
+    },
+    {
+      "index": 11,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4201,
+      "speed_weight": 1.092444,
+      "front_distance_weight": 0.546222
+    },
+    {
+      "index": 12,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4202,
+      "speed_weight": 1.092444,
+      "front_distance_weight": 0.546222
+    },
+    {
+      "index": 13,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4203,
+      "speed_weight": 1.092444,
+      "front_distance_weight": 0.546222
+    },
+    {
+      "index": 14,
+      "arm": "D",
+      "variant": "SP",
+      "agent": "SP",
+      "seed": 4204,
+      "speed_weight": 1.092444,
+      "front_distance_weight": 0.546222
+    },
+    {
+      "index": 15,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4200,
+      "speed_weight": 0.407339,
+      "front_distance_weight": 0.814678
+    },
+    {
+      "index": 16,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4201,
+      "speed_weight": 0.407339,
+      "front_distance_weight": 0.814678
+    },
+    {
+      "index": 17,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4202,
+      "speed_weight": 0.407339,
+      "front_distance_weight": 0.814678
+    },
+    {
+      "index": 18,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4203,
+      "speed_weight": 0.407339,
+      "front_distance_weight": 0.814678
+    },
+    {
+      "index": 19,
+      "arm": "D",
+      "variant": "FD",
+      "agent": "FD",
+      "seed": 4204,
+      "speed_weight": 0.407339,
+      "front_distance_weight": 0.814678
+    },
+    {
+      "index": 20,
+      "arm": "D",
+      "variant": "BAL",
+      "agent": "BAL",
+      "seed": 4200,
+      "speed_weight": 0.7,
+      "front_distance_weight": 0.7
+    },
+    {
+      "index": 21,
+      "arm": "D",
+      "variant": "BAL",
+      "agent": "BAL",
+      "seed": 4201,
+      "speed_weight": 0.7,
+      "front_distance_weight": 0.7
+    },
+    {
+      "index": 22,
+      "arm": "D",
+      "variant": "BAL",
+      "agent": "BAL",
+      "seed": 4202,
+      "speed_weight": 0.7,
+      "front_distance_weight": 0.7
+    },
+    {
+      "index": 23,
+      "arm": "D",
+      "variant": "BAL",
+      "agent": "BAL",
+      "seed": 4203,
+      "speed_weight": 0.7,
+      "front_distance_weight": 0.7
+    },
+    {
+      "index": 24,
+      "arm": "D",
+      "variant": "BAL",
+      "agent": "BAL",
+      "seed": 4204,
+      "speed_weight": 0.7,
+      "front_distance_weight": 0.7
+    }
+  ],
+  "retries": [
+    {
+      "job_id": "9701285[].kman.restech.unsw.edu.au",
+      "indices": [
+        2,
+        7
+      ],
+      "array": "2-7:5"
+    },
+    {
+      "job_id": "9701286[].kman.restech.unsw.edu.au",
+      "indices": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "array": "8-16"
+    },
+    {
+      "job_id": "9701350[].kman.restech.unsw.edu.au",
+      "indices": [
+        11,
+        12,
+        13
+      ],
+      "array": "11-13",
+      "script": "scripts/katana_reward_equal_start_bd_retry2.pbs"
+    },
+    {
+      "job_id": "9701351[].kman.restech.unsw.edu.au",
+      "indices": [
+        9,
+        16
+      ],
+      "array": "9-16:7",
+      "script": "scripts/katana_reward_equal_start_bd_retry2.pbs"
+    }
+  ],
+  "retry_script": {
+    "path": "scripts/katana_reward_equal_start_bd_retry.pbs",
+    "sha256": "06307fb591fba3230e44d99fd6a3522bbfda7572605d0249784477b58901b3fa",
+    "walltime": "05:00:00",
+    "added_to_remote_snapshot_after_archive": true
+  },
+  "retry_reason": "Shared node cache /tmp/highway-shared-env-15535967/<venv sha256> existed without ready.json on several nodes (likely /tmp cleanup of the 2026-10-26 cache), so --shared-env failed reading the marker. Retries stage a private environment per task. Observed runtimes: B 22-30 min; earlier Arm D runs 20-60 min, max about 3.6 h; retry walltime 5 h.",
+  "cancelled": {
+    "job": "9701286[]",
+    "indices": [
+      9,
+      11,
+      12,
+      13,
+      16
+    ],
+    "reason": "Private-mode tasks packed onto one node (k197: 11,12,13,14,16; k084: 9,10) waited for the per-node lock held for each child's lifetime; after 33 min none had started, and serial D runs would exceed the 3 h lock timeout. Cancelled before any output directory existed."
+  },
+  "retry2_script": {
+    "path": "scripts/katana_reward_equal_start_bd_retry2.pbs",
+    "sha256": "a03df969cdf55e5ffc4bb7f351ff08978131fd08461735d631e6fe2bb1673889",
+    "method": "--shared-env with fresh --local-root /tmp/highway-eqbd-retry2: own lock and cache, avoids the damaged default cache and the private-mode lock; retains about 1.2 GB per node",
+    "added_to_remote_snapshot_after_archive": true
+  },
+  "final_outcome": {
+    "complete_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24
+    ],
+    "gate_failed": {
+      "index": 14,
+      "run": "arm_c_distance-affine-v1_ES-SP_100k_seed4204",
+      "scientific_result": false,
+      "reason": "All 20 checkpoints (5k-100k) fail gate_no_front_specificity: the agent still changes lanes with no front vehicle (no_front_valid 9-36 of 36). Safety, estimability and far-front gates pass. Same outcome type as the original Arm D gaps F1 4209 and F4 4205.",
+      "action": "Not retrained or replaced; left missing as the original Arm D protocol does. Training logs remain usable for training-return curves."
+    },
+    "arm_d_selected_steps": {
+      "SP": {
+        "4200": 100000,
+        "4201": 95000,
+        "4202": 100000,
+        "4203": 95000
+      },
+      "FD": {
+        "4200": 100000,
+        "4201": 85000,
+        "4202": 75000,
+        "4203": 95000,
+        "4204": 85000
+      },
+      "BAL": {
+        "4200": 95000,
+        "4201": 100000,
+        "4202": 65000,
+        "4203": 100000,
+        "4204": 100000
+      }
+    }
+  }
+}

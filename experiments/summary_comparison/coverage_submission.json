@@ -1,0 +1,92 @@
+{
+  "date_local": "2026-10-27",
+  "timezone": "Australia/Sydney",
+  "task": "A-D HIGHLIGHTS / DISAGREEMENTS onset coverage",
+  "remote_snapshot": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/clip_onset_coverage_20261027_v1",
+  "remote_output": "/srv/scratch/z5535967/highway_transition_timing/outputs/clip_onset_coverage_20261027_v1",
+  "local_output": "outputs/summary_comparison/clip_onset_coverage_20261027_v1",
+  "snapshot_archive_sha256": "78085f22a94529d280ebbf57295cc5e355a402d02587ccc1dc764c074f9b1300",
+  "corrected_onsets_archive_sha256": "638a7311e769c39c57163641f1cad1906cec7103f8ca306a86e6154982b0b541",
+  "smoke": {
+    "job_id": "9621510[].kman.restech.unsw.edu.au",
+    "indices": [
+      60,
+      61
+    ],
+    "status": "passed",
+    "episodes": 6
+  },
+  "full": [
+    {
+      "job_id": "9622467[].kman.restech.unsw.edu.au",
+      "retained_indices": "0-19,60-79",
+      "arms": [
+        "A",
+        "D"
+      ],
+      "note": "Indices 20-59 cancelled before useful work: corrected B/C onset inputs were local only."
+    },
+    {
+      "job_id": "9622470[].kman.restech.unsw.edu.au",
+      "indices": "20-59",
+      "arms": [
+        "B",
+        "C"
+      ],
+      "input_root": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/clip_onset_coverage_20261027_inputs"
+    },
+    {
+      "job_id": "9622481[].kman.restech.unsw.edu.au",
+      "indices": "65,69",
+      "arms": [
+        "D"
+      ],
+      "seeds": [
+        4205,
+        4209
+      ],
+      "snapshot": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/clip_onset_coverage_20261027_v2",
+      "reason": "Recognize the actual failed-eligibility status message; verify all model-selection rows are ineligible. Two ineligible models remain excluded; four available leaders proceed. No selection/ranking/coverage changes."
+    }
+  ],
+  "model_eligibility": {
+    "A": 60,
+    "B": 60,
+    "C": 60,
+    "D": 58,
+    "D_ineligible": [
+      "FD/4209",
+      "BAL/4205"
+    ]
+  },
+  "status": "complete; all eligible leaders validated",
+  "v2_archive_sha256": "5a9eff3655df2c117070683c7da99b7ab0fc8a41fc7188e25593dc7c8fe72086",
+  "historical_highlights_reproduced": {
+    "A": [
+      14,
+      28,
+      300
+    ],
+    "B": [
+      129,
+      94,
+      300
+    ],
+    "C": [
+      73,
+      86,
+      300
+    ]
+  },
+  "verified_date_local": "2026-10-28",
+  "final_validation": {
+    "eligible_leaders_completed": 238,
+    "ineligible_models": 2,
+    "episodes": 8568,
+    "selected_clips": 4740,
+    "directed_policy_pairs": 472,
+    "numerical_action_ties": 0,
+    "historical_highlights_selected_clip_identities_matched": 1800,
+    "tests_passed": 25
+  }
+}

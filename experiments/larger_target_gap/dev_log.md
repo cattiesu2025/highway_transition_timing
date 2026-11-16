@@ -45,3 +45,19 @@ User authorized retraining. Added explicit broad-v2 profile with uniform white-c
 - FD/5200 broad-v2 200-step smoke completed with 12 control evaluation episodes. Preflight covered 36 grid scenes + tight training corner, two scripted policies each (74 trajectories); all 37 immediate lane changes were collision-free, initial positions unclipped.
 - Collector now writes `by_distance.csv`; regression collection of all nine downloaded v1 jobs exactly reproduced the previous `summary.csv`. Broad-v2 collector correctly reports 0/9 real jobs so far, excluding smoke.
 - User elected to submit from an already logged-in Katana terminal. No real retraining submitted by this assistant; dedicated command is `qsub scripts/katana_larger_target_gap_broad_v2.pbs` after updating code.
+
+## Broad v2 completed-results audit
+
+User downloaded all nine real broad-v2 outputs. Verified 100k checkpoint step counts, source hashes and 1,296 complete 20-second episodes (129,600 steps); zero collisions across all variants. Main scenes: 324/324 lane changes with greater target-lane space. Distance-stratified results show delayed left-lane changes at longer distances, especially SP, but seed 5200 reverses FD/SP ordering compared with the other two seeds. Saved collection to `outputs/larger_target_gap_broad_v2_summary` and interpretation to `BROAD_V2_RESULTS.md`. No additional training or selection performed.
+
+## Selected-weight correction and unified protocol draft
+
+User reaffirmed F1/F4/F7 for the new controlled A/B/C experiment. Verified selected-weight validation already specified those pairs; earlier distance pilots and timing audit used original weights and cannot serve as F1/F4/F7 evidence. Created `experiments/arm_c_distance_variant/PROTOCOL.md` and updated active requirements. Draft also identifies arm-specific target-speed tables and slowdown costs needing explicit alignment. No models changed, no new training submitted.
+
+## 2026-10-26 — Scope correction: distance-only C extension
+
+User clarified that the added experiment should change distances only. The previous unified A/B/C draft over-expanded the scope and is superseded. Updated `experiments/arm_c_distance_variant/PROTOCOL.md`: preserve existing A/B/C configurations and models; plan only a separate C-distance variant, retaining non-distance settings and matching the previously selected F1/F4/F7 C baseline. Existing baseline availability and distance/stratification compatibility still need verification. Archived the prior draft as explicitly superseded under `experiments/arm_c_distance_variant/archive/`. No code, model, or training submission changed.
+
+## 2026-10-26 — Rename added experiment directory
+
+Renamed the draft directory to `experiments/arm_c_distance_variant` to reflect the added C distance experiment. Moved the superseded unified draft into its `archive/` subdirectory and updated document references. No training configuration or results changed.

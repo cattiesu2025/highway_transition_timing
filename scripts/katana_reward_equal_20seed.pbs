@@ -1,0 +1,38 @@
+#!/bin/bash
+# 20-seed rerun of the t=0 (ES) and first-log (FL) equal-start designs.
+# Index layout (experiments/reward_equal_start/jobs_20seed.json):
+#   0-79    BAL  Arms A/B/C/D x 20 seeds (shared by ES and FL)
+#   80-239  ES   Arms A/B/C/D x SP/FD x 20 seeds
+#   240-359 FL   Arms A/B/D   x SP/FD x 20 seeds
+#   360-399 FL   Arm C        x SP/FD x 20 seeds (optional)
+# Arm D tasks: 60-79, 200-239, 320-359.
+# Set VENV_BUNDLE to the directory printed by katana_pack_training_env.sh.
+# Submit from the source snapshot: qsub -J 0-359 -v VENV_BUNDLE scripts/katana_reward_equal_20seed.pbs
+#PBS -N reward-equal-20seed
+#PBS -J 0-359
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=07:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+: "${PBS_ARRAY_INDEX:?Array index is required}"
+module load python/3.11.3
+: "${VENV_BUNDLE:?Set VENV_BUNDLE to the prepared snapshot directory}"
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+ARM=$(python3 -S -c 'import json,sys; print(json.load(open("experiments/reward_equal_start/jobs_20seed.json"))[int(sys.argv[1])]["arm"])' "$PBS_ARRAY_INDEX")
+if [[ "$ARM" == D ]]; then
+  # Match the thread settings of the original Arm D training jobs.
+  export OMP_NUM_THREADS=1
+  export OPENBLAS_NUM_THREADS=1
+fi
+LOCAL_ROOT=/tmp/highway-equal20
+mkdir -p -m 700 "$LOCAL_ROOT"
+python3 -S scripts/katana_local_env.py --shared-env --local-root "$LOCAL_ROOT" --bundle "$VENV_BUNDLE" -- \
+  bash -c 'set -euo pipefail
+    source scripts/katana_headless_setup.sh
+    python3 experiments/reward_equal_start/run_20seed.py \
+      --index "$1" \
+      --out-root "/srv/scratch/${USER}/highway_transition_timing/outputs" \
+      --execute
+  ' highway-equal20 "$PBS_ARRAY_INDEX"

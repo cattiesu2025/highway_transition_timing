@@ -2,6 +2,8 @@
 
 日期：2026-10-13。成功定义：`complete_overtake_return_v1`，对应设计文档 draft-v5。
 
+2026-10-14 更新：[B/BAL/S10 的 100K 训练与最终策略评估](RESULTS_B_BAL_S10_100K.md)。奖励已触发并被采样，但最终确定性策略在 development 36 场景与训练末期 79 个 slow-front 原场景中均未完成返回。
+
 ## Definition and Scope
 
 用户明确“超车”指完整过程，本轮采用以下有序判据：

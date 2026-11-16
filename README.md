@@ -122,6 +122,13 @@ latexmk -pdf paper.tex
 The manuscript currently distinguishes development evidence from held-out
 evidence. A campus user study remains a separate claim-expansion decision.
 
+Planned non-highway extensions (not yet implemented):
+
+1. [LunarLander powered-braking onset](docs/experiments/lunar_lander_plan.md)
+   is the first implementation priority.
+2. [Task-to-recharge transition](docs/experiments/recharge_return_plan.md)
+   follows only if time remains after the LunarLander evaluation and integration.
+
 ## Verification
 
 ```bash
@@ -138,3 +145,10 @@ Historical diagnostics and superseded experiments are described only in
 The six-configuration, five-seed A/B/C comparison and R figures are documented
 in [the reward sensitivity workflow](experiments/reward_sensitivity/README.md).
 It uses separate outputs and development evaluation; held-out v2 is unchanged.
+
+## Added Arm C Distance Experiment
+
+The independent [Arm C distance variant](experiments/arm_c_distance_variant/README.md)
+changes only the two front-vehicle distances after generating the original C
+scene, preserving its speeds and source scene quotas. Its runner supports
+local audit/smoke and separate training outputs; existing A/B/C runs are unchanged.

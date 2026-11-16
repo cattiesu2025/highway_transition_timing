@@ -1,0 +1,15 @@
+#!/bin/bash
+# Remaining 51 models only; seeds 4200-4202 are already in array 9615815.
+#PBS -N C-distance-rest
+#PBS -J 0-50
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=07:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+: "${PBS_ARRAY_INDEX:?Expected array index 0-50}"
+if (( PBS_ARRAY_INDEX < 0 || PBS_ARRAY_INDEX > 50 )); then exit 2; fi
+agents=(FD BAL SP)
+export DISTANCE_AGENT="${agents[$((PBS_ARRAY_INDEX / 17))]}"
+export DISTANCE_SEED="$((4203 + PBS_ARRAY_INDEX % 17))"
+exec bash scripts/katana_arm_c_distance_variant.pbs

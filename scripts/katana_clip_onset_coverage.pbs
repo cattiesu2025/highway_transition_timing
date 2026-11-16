@@ -1,0 +1,41 @@
+#!/bin/bash
+# Inference only: A/B/C historical models plus D distance-affine-v1.
+#PBS -N clip-onset
+#PBS -J 0-79
+#PBS -l select=1:ncpus=3:mem=12gb
+#PBS -l walltime=03:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+: "${VENV_BUNDLE:?Prepared environment bundle required}"
+: "${COVERAGE_OUT:?Fresh output root required}"
+: "${PBS_ARRAY_INDEX:?Expected index 0-79}"
+if (( PBS_ARRAY_INDEX < 0 || PBS_ARRAY_INDEX > 79 )); then exit 2; fi
+arms=(A B C D)
+bases=(3100 4100 4200 4200)
+export COVERAGE_ARM="${arms[$((PBS_ARRAY_INDEX / 20))]}"
+export COVERAGE_SEED="$((bases[PBS_ARRAY_INDEX / 20] + PBS_ARRAY_INDEX % 20))"
+mkdir -p "${COVERAGE_OUT}/logs"
+exec >"${COVERAGE_OUT}/logs/${PBS_JOBID}.log" 2>&1
+module load python/3.11.3
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 PYTHONUNBUFFERED=1
+python3 -S scripts/katana_local_env.py --shared-env --bundle "$VENV_BUNDLE" -- \
+  bash -c 'set -euo pipefail
+    source scripts/katana_headless_setup.sh
+    smoke_args=()
+    if [[ -n "${COVERAGE_MAX_EXPOSURES:-}" ]]; then
+      smoke_args=(--max-exposures "$COVERAGE_MAX_EXPOSURES")
+    fi
+    pids=()
+    for leader in FD BAL SP; do
+      python3 -u scripts/clip_onset_coverage.py --arm "$COVERAGE_ARM" \
+        --seed "$COVERAGE_SEED" --leader "$leader" \
+        --outputs-root "${COVERAGE_INPUT_ROOT:-/srv/scratch/${USER}/highway_transition_timing/outputs}" \
+        --out "$COVERAGE_OUT" "${smoke_args[@]}" &
+      pids+=("$!")
+    done
+    failed=0
+    for pid in "${pids[@]}"; do wait "$pid" || failed=1; done
+    exit "$failed"
+  '

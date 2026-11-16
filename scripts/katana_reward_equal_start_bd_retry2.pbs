@@ -1,0 +1,37 @@
+#!/bin/bash
+# Second retry for B/D equal-start tasks stuck behind the private-mode node lock.
+# Uses --shared-env under a fresh local root, so it has its own lock and cache and
+# neither reads the damaged default cache nor waits for private-mode jobs.
+# Retains one verified environment copy (about 1.2 GB) per node under that root.
+# Pass the indices with -J, e.g. qsub -J 8-16 -v VENV_BUNDLE scripts/katana_reward_equal_start_bd_retry2.pbs
+# Original array description:
+#   0-9   Arm B  SP/FD x seeds 4100-4104 (BAL reused from the main Arm B runs)
+#   10-24 Arm D  SP/FD/BAL x seeds 4200-4204 (no (0.70, 0.70) Arm D model exists)
+# Set VENV_BUNDLE to the directory printed by katana_pack_training_env.sh.
+# Submit from the source snapshot: qsub -v VENV_BUNDLE scripts/katana_reward_equal_start_bd.pbs
+#PBS -N reward-equal-start-bd-retry2
+#PBS -l select=1:ncpus=4:mem=16gb
+#PBS -l walltime=05:00:00
+#PBS -j oe
+set -euo pipefail
+cd "${PBS_O_WORKDIR}"
+: "${PBS_ARRAY_INDEX:?Array index is required; submit with -J}"
+module load python/3.11.3
+: "${VENV_BUNDLE:?Set VENV_BUNDLE to the prepared snapshot directory}"
+export PYTHONPATH="${PBS_O_WORKDIR}/src"
+export PYTHONUNBUFFERED=1
+if (( PBS_ARRAY_INDEX >= 10 )); then
+  # Match the thread settings of the original Arm D training jobs.
+  export OMP_NUM_THREADS=1
+  export OPENBLAS_NUM_THREADS=1
+fi
+LOCAL_ROOT=/tmp/highway-eqbd-retry2
+mkdir -p -m 700 "$LOCAL_ROOT"
+python3 -S scripts/katana_local_env.py --shared-env --local-root "$LOCAL_ROOT" --bundle "$VENV_BUNDLE" -- \
+  bash -c 'set -euo pipefail
+    source scripts/katana_headless_setup.sh
+    python3 experiments/reward_equal_start/run_bd.py \
+      --index "$1" \
+      --out-root "/srv/scratch/${USER}/highway_transition_timing/outputs" \
+      --execute
+  ' highway-equal-start-bd "$PBS_ARRAY_INDEX"
