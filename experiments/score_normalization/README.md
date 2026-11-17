@@ -111,4 +111,33 @@ eligibility gate, as an untrained model should).
   return equals the replay prediction under SN1 scores (A 124.5092, C 104.4679, D 20.6863)
   and differs from the maintained-score prediction. Arm B shares the Arm C path and was
   not smoke-run separately.
-- No 100K run has been started.
+
+## Results (Katana job 9801794, checked 2026-11-17)
+
+All 24 runs trained to 100K steps. 19 selected an eligible checkpoint and were evaluated;
+5 of 6 Arm D runs had no eligible checkpoint. `compare.py` pairs every run with its
+maintained-score run (same arm, agent, seed; 36 development-grid episodes each) and writes
+`outputs/score_normalization/comparison/`.
+
+Median onset (s) per seed, maintained → SN1. Every evaluated run had 36/36 onsets and no
+collisions, except SN1 Arm C SP seed 4201 (35/36, 1 collision before onset).
+
+| Arm | BAL | SP | FD |
+|---|---|---|---|
+| A (3100, 3101) | 2.6 → 1.8, 3.6 → 2.2 | 3.0 → 3.1, 2.7 → 2.2 | 0.9 → 2.6, 1.8 → 1.2 |
+| B (4100, 4101) | 4.4 → 0.9, 2.8 → 0.8 | 4.6 → 8.6, 3.4 → 1.8 | 2.1 → 1.6, 2.2 → 0.6 |
+| C (4200, 4201) | 6.8 → 6.8, 8.7 → 6.2 | 7.4 → 4.7, 5.6 → 6.4 | 7.2 → 9.4, 9.4 → 9.4 |
+| D (4200, 4201) | 1.6 → gate, 0.6 → gate | 0.6 → 0.6, 0.6 → gate | 0.7 → gate, 1.8 → gate |
+
+Paired by exposure, SN1 BAL onsets are earlier in 72/72 episodes in Arm A (median −1.0 s)
+and Arm B (−2.7 s), and in 52/72 in Arm C (−0.9 s). SP and FD shifts are mixed in sign
+across seeds. Seed-to-seed spread (e.g. SN1 Arm B SP 8.6 s vs 1.8 s) is as large as any
+SN1 effect, so two seeds do not establish an ordering of SP, BAL and FD.
+
+Arm D failures are control-specificity failures, not safety or estimability: at every
+checkpoint the policy changed lanes as early with a matched-speed front vehicle as with the
+slow one (delay 0.00 s, gate needs a positive delay); no collisions, 36/36 onsets. Maintained
+Arm D runs are near the same edge (delay 0.00 s at 100K in 3 of 6), but an earlier
+checkpoint passed; under SN1 none of 20 checkpoints did in 5 of 6 runs. A plausible reading,
+not tested here: with distance now scored up to 200 m, moving to a lane with more headroom
+pays regardless of the front vehicle's speed.

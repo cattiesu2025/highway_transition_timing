@@ -1,0 +1,32 @@
+{
+  "date_local": "2026-11-16",
+  "job_id": "9801794[].kman.restech.unsw.edu.au",
+  "array_indices": "0-23",
+  "queue": "cse12",
+  "pbs_script": "scripts/katana_score_normalization.pbs",
+  "runner": "experiments/score_normalization/run.py",
+  "manifest": "experiments/score_normalization/jobs.json",
+  "source_commit": "8c273ea9cca4df098ee1442cc6b0a8ef60dee8d0",
+  "remote_snapshot": "/srv/scratch/z5535967/highway_transition_timing/run_snapshots/score_normalization_20261116",
+  "source_archive_sha256": "432ee3352b77fd90f53eed0e28e82dd377fc39492a5ca256bb55df0da55da693",
+  "remote_output_root": "/srv/scratch/z5535967/highway_transition_timing/outputs",
+  "environment_bundle": "/srv/scratch/z5535967/venv_archives/highway-env.2DBNKs",
+  "output_names": {
+    "A/B/C": "score_norm_SN1_arm<A|B|C>_<BAL|SP|FD>_100k_seed<seed>",
+    "D": "arm_c_distance-affine-v1_SN1-<BAL|SP|FD>_100k_seed<seed>"
+  },
+  "note": "Submission is not evidence of completed training.",
+  "outcome_checked_2026-11-17": {
+    "all_jobs_finished": true,
+    "trained_to_100k": 24,
+    "selected_and_evaluated": 19,
+    "no_eligible_checkpoint": [
+      "arm_c_distance-affine-v1_SN1-BAL_100k_seed4200",
+      "arm_c_distance-affine-v1_SN1-BAL_100k_seed4201",
+      "arm_c_distance-affine-v1_SN1-SP_100k_seed4201",
+      "arm_c_distance-affine-v1_SN1-FD_100k_seed4200",
+      "arm_c_distance-affine-v1_SN1-FD_100k_seed4201"
+    ],
+    "synced_to": "outputs/ (run directories) and outputs/score_normalization/katana_logs/"
+  }
+}
